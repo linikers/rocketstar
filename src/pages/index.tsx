@@ -49,14 +49,33 @@ function App() {
         <Grid item 
           style={{ 
             display: "flex", 
-            flexDirection: "row", 
+            flexWrap: "wrap", 
             alignItems: "center" ,
             justifyContent: "center",
-            width: "100%",        }}
+            width: "100%",        
+          }}
         >
-          <Button color= 'secondary' onClick={handleNavigateVote}>Vote Agora</Button>
-          <Button color= 'secondary' onClick={handleNavigateRegister}>Registre o participante</Button>
-          <Button color= 'secondary' onClick={handleNavigateTop10}>Classificação Geral</Button>
+          <Button
+            color= 'secondary' 
+            onClick={handleNavigateVote}
+            sx={{ margin: "4px"}}
+          >
+            Vote Agora
+          </Button>
+          <Button
+            color= 'secondary' 
+            onClick={handleNavigateRegister}
+            sx={{ margin: "4px"}}
+          >
+            Registre o participante
+          </Button>
+          <Button 
+            color= 'secondary' 
+            onClick={handleNavigateTop10}
+            sx={{ margin: "4px"}}
+          >
+            Classificação Geral
+          </Button>
         </Grid>
           <Grid item xs={12} style={{ 
             display: "flex", justifyContent: "center" }}
