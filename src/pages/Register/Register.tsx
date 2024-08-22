@@ -99,7 +99,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
 
   return (
     <form onSubmit={handleRegister}>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ marginTop: '2rem'}}>
         <FormControl fullWidth>
           <Grid item xs={12} style={{ margin: "1rem" }}>
             <TextField label="Nome" name="name" value={formData.name} color="secondary" onChange={handleInputChange} fullWidth />
