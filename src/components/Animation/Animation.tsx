@@ -9,10 +9,11 @@ export default function Animation() {
             justifyContent="center" 
             alignItems="center" 
             sx={{
-                height: {xs: '100vh', sm: '100vh'},
+                width: '100%',
+                height: { xs: '100vh', sm: '84vh' },
                 overflow: 'hidden',
                 '& img': {
-                    width: {xs: '64vw', sm: '64vw'},
+                    width: {xs: '84vw', sm: '64vw'},
                     transform: 'rotate(-45deg)',
                     animation: 'fly 4s ease-in-out infinite',
                     objectFit: 'contain',
