@@ -13,7 +13,7 @@ const blinkAndChangeColor = keyframes`
   0% { opacity: 1; color: #ff00ff; }
 `;
 
-export const Header = () => {
+export const Header = ({ onClick }: any) => {
   return (
     <Grid sx={{
       display: "flex",
@@ -22,7 +22,9 @@ export const Header = () => {
       padding: "2rem",
       perspective: "800px",
       flexDirection: { xs: "column", sm: "row" },
-    }}>
+    }}
+      onClick={onClick}
+    >
       <Typography sx={{
         transform: "rotateY(20deg)",
         transition: "transform 0.5s",

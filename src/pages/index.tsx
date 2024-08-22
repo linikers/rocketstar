@@ -13,6 +13,9 @@ function App() {
     const [snackBarMessage, setSnackBarMessage] = useState("");
     const [, setSnackBarOpen] = useState(false);
   
+    const handleNavigateAnimation = () => {
+      setCurrentPage('animation')
+    }
     const handleNavigateVote = () => {
       setCurrentPage('vote')
     }
@@ -41,7 +44,7 @@ function App() {
         }}
       >
         <Grid item style={{ width: "100%", maxWidth: "1200px" }}>
-          <Header />
+          <Header onClick={handleNavigateAnimation} />
         </Grid>
         <Grid item 
           style={{ 
@@ -56,9 +59,9 @@ function App() {
           <Button color= 'secondary' onClick={handleNavigateTop10}>Classificação Geral</Button>
         </Grid>
           <Grid item xs={12} style={{ 
-            display: "flex", justifyContent: "center" }}>
-              {currentPage ==="animation" && <Animation />}
-              
+            display: "flex", justifyContent: "center" }}
+          >
+            {currentPage ==="animation" && <Animation />}    
             {currentPage === 'vote' && 
               <Vote onOpenSnackBar={handleOpenSnackBar} users={users} setUsers={setUsers} />}
             {currentPage === 'register' && <Register onRegister={handleNavigateVote} />}
