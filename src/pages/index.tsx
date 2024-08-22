@@ -5,10 +5,11 @@ import { Header } from "@/components/Header/Header";
 import Vote from "./Vote/Vote";
 import Top100 from "./Top100/Top100";
 import { SnackBarCustom } from "@/components/Snackbar/SnackBar";
+import Animation from "@/components/Animation/Animation";
 
 function App() {
     const [users, setUsers] = useState<IUser[]>([]);
-    const [currentPage, setCurrentPage] = useState('home')
+    const [currentPage, setCurrentPage] = useState('animation')
     const [snackBarMessage, setSnackBarMessage] = useState("");
     const [, setSnackBarOpen] = useState(false);
   
@@ -56,6 +57,8 @@ function App() {
         </Grid>
           <Grid item xs={12} style={{ 
             display: "flex", justifyContent: "center" }}>
+              {currentPage ==="animation" && <Animation />}
+              
             {currentPage === 'vote' && 
               <Vote onOpenSnackBar={handleOpenSnackBar} users={users} setUsers={setUsers} />}
             {currentPage === 'register' && <Register onRegister={handleNavigateVote} />}
