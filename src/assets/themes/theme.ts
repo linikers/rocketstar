@@ -1,6 +1,11 @@
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
+  // #9400F0 roxo
+  // #FFCBDB rosa
+  // #4169E1 azul royal
+  // #B4D4EE azul columbia
+ 
   palette: {
     primary: {
       main: '#B8F3FF',

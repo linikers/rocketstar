@@ -112,7 +112,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "center",
-                                    backgroundColor: "#6c757d",
+                                    backgroundColor: "#FB607F",
                                     padding: "1rem",
                                     borderRadius: "8px",
                                     marginBottom: "1rem",
@@ -126,12 +126,12 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                 }}
                             >
                                 <Typography
-                                    style={{ fontWeight: "bold" }}
+                                    style={{ fontWeight: "bold", color: "#FFC0CB" }}
                                 >
                                     {user.name}
                                 </Typography>
                                 <Typography
-                                    style={{ color: "#757575" }}
+                                    style={{ color: "#FB607F" }}
                                 >
                                     {user.work}
                                 </Typography>
