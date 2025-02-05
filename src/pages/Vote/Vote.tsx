@@ -140,7 +140,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Anatomia"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.anatomy}
+                                    value={voteValues.anatomy ? Number(voteValues.anatomy) : 0}
                                     onChange={handleVoteChange}
                                     name="anatomy"
                                     style={{ marginBottom: "0.5rem" }}
@@ -150,7 +150,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Criatividade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.creativity}
+                                    value={voteValues.creativity ? Number(voteValues.creativity) : 0}
                                     onChange={handleVoteChange}
                                     name="creativity"
                                     style={{ marginBottom: "0.5rem" }}
@@ -160,7 +160,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Pigmentação"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.pigmentation}
+                                    value={voteValues.pigmentation ? Number(voteValues.pigmentation) : 0}
                                     onChange={handleVoteChange}
                                     name="pigmentation"
                                     style={{ marginBottom: "0.5rem" }}
@@ -170,7 +170,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Traços"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.traces}
+                                    value={voteValues.traces ? Number(voteValues.traces) : 0}
                                     onChange={handleVoteChange}
                                     name="traces"
                                     style={{ marginBottom: "0.5rem" }}
@@ -180,7 +180,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Legibilidade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.readability}
+                                    value={voteValues.readability ? Number(voteValues.readability) : 0}
                                     onChange={handleVoteChange}
                                     name="readability"
                                     style={{ marginBottom: "0.5rem" }}
@@ -190,7 +190,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Impacto Visual"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.visualImpact}
+                                    value={voteValues.visualImpact ? Number(voteValues.visualImpact) : 0}
                                     onChange={handleVoteChange}
                                     name="visualImpact"
                                     style={{ marginBottom: "0.5rem" }}

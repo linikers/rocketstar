@@ -31,7 +31,18 @@ export default function Top100 () {
     }, []);
     if(loading) return <Typography>Carregando...</Typography>
 
-    const sortedUsers = [...users].sort((a,b) => b.totalScore - a.totalScore).slice(0, 100)
+    // const sortedUsers = [...users].sort((a,b) => b.totalScore - a.totalScore).slice(0, 100)
+    //add id
+    const sortedUsers = [...users].map(user => ({
+        ...user, 
+        totalScore: 
+            (user.anatomy || 0) + 
+            (user.creativity || 0) +
+            (user.pigmentation || 0) +
+            (user.traces || 0) +
+            (user.readability || 0) +
+            (user.visualImpact || 0)
+    })).sort((a, b) => b.totalScore - a.totalScore).slice(0, 100);
 
     return (
         <Grid container spacing={2} sx={{ margin: "3rem", marginTop: "6rem" }}>
@@ -57,7 +68,7 @@ export default function Top100 () {
                             <Typography variant="body1">Traços: {user.traces}</Typography>
                             <Typography variant="body1">Legibilidade: {user.readability}</Typography>
                             <Typography variant="body1">Impacto Visual: {user.visualImpact}</Typography>
-                            <Typography variant="body2">Nota Geral: {user.totalScore}</Typography>
+                            <Typography variant="body2">Nota Geral: {Number(user.totalScore)}</Typography>
                         </Box>
                     </Paper>
                  
