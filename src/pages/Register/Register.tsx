@@ -126,33 +126,8 @@ export default function Register ({ onRegister }: IRegisterProps) {
           <Grid item xs={12} style={{ margin: "1rem" }}>
             <TextField label="Estúdio" name="work" value={formData.work} onChange={handleInputChange} fullWidth />
           </Grid>
-          {/* <Grid item xs={12} style={{ margin: "1rem" }}>
-            <TextField
-              select
-              label="Dia"
-              name="day"
-              value={formData.day}
-              onChange={handleInputChange}
-              SelectProps={{ native: true }}
-              fullWidth
-            >
-              <option value="Sexta">Sexta</option>
-              <option value="Sábado">Sábado</option>
-              <option value="Domingo">Domingo</option>
-            </TextField>
-          </Grid> */}
 
-          {/* <Grid item xs={12} style={{ margin: "1rem" }}>
-            <TextField
-              label="Categoria"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              fullWidth
-            />
-          </Grid> */}
-
-<FormControl fullWidth>
+      <FormControl fullWidth>
          <InputLabel id="dia-label">Selecione o Dia</InputLabel>
          <Select
            labelId="dia-label"
@@ -172,7 +147,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
              </MenuItem>
            ))}
          </Select>
-       </FormControl>
+      </FormControl>
        
             {diaSelecionado && (
               <FormControl fullWidth>
