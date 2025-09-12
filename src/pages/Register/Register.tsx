@@ -1,4 +1,5 @@
-import { Button, FormControl, Grid, TextField } from "@mui/material";
+import { categoryToDay } from "@/utils/categoryMap";
+import { Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import React, { FormEvent, useState } from "react";
 
 export interface IUser {
@@ -14,11 +15,15 @@ export interface IUser {
   readability: number;
   visualImpact: number;
   totalScore: number;
+  day: "Sexta" | "Sábado" | "Domingo";
+  category: string;
 }
 
 interface IRegisterProps {
   onRegister: () => void;
 }
+
+const dias = ["Sexta", "Sábado", "Domingo"] as const;
 
 export default function Register ({ onRegister }: IRegisterProps) {
   const [formData, setFormData] = useState<IUser>({
@@ -34,10 +39,14 @@ export default function Register ({ onRegister }: IRegisterProps) {
     readability: 0,
     visualImpact: 0,
     totalScore: 0,
+    day: "Sexta",
+    category: "",
   });
-  const [ , setSnackbarMessage] = useState("");
-  const [ , setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("success");
-  const [ , setSnackbarOpen] = useState(false);
+  const [, setSnackbarMessage] = useState("");
+  const [, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("success");
+  const [, setSnackbarOpen] = useState(false);
+
+  const [diaSelecionado, setDiaSelecionado] = useState<string>("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -49,8 +58,19 @@ export default function Register ({ onRegister }: IRegisterProps) {
     }));
   };
 
+  const handleCategoryChange = (categoria: string) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      category: categoria,
+    }));
+  };
+
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
+
+    // DEBUG: Verificar se a categoria está sendo enviada
+    console.log('FormData sendo enviado:', formData);
+    console.log('Category:', formData.category);
 
     try {
       const response = await fetch('/api/save', {
@@ -75,6 +95,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
       setSnackbarOpen(true);
       onRegister();
 
+      // Reset do formulário
       setFormData({
         id: "",
         name: "",
@@ -88,8 +109,11 @@ export default function Register ({ onRegister }: IRegisterProps) {
         readability: 0,
         visualImpact: 0,
         totalScore: 0,
+        day: "Sexta",
+        category: "",
       });
-      savedUser();
+      setDiaSelecionado("");
+      
     } catch (error) {
       setSnackbarMessage("Erro ao salvar");
       setSnackbarSeverity("error");
@@ -97,24 +121,98 @@ export default function Register ({ onRegister }: IRegisterProps) {
     }
   };
 
+  const categoriasFiltradas = Object.entries(categoryToDay)
+    .filter(([_, dia]) => dia === diaSelecionado)
+    .map(([categoria]) => categoria);
+
   return (
     <form onSubmit={handleRegister}>
       <Grid container spacing={2} sx={{ marginTop: '2rem'}}>
         <FormControl fullWidth>
           <Grid item xs={12} style={{ margin: "1rem" }}>
-            <TextField label="Nome" name="name" value={formData.name} color="secondary" onChange={handleInputChange} fullWidth />
+            <TextField 
+              label="Nome" 
+              name="name" 
+              value={formData.name} 
+              color="secondary" 
+              onChange={handleInputChange} 
+              fullWidth 
+              required
+            />
           </Grid>
           <Grid item xs={12} style={{ margin: "1rem" }}>
-            <TextField label="Estúdio" name="work" value={formData.work} onChange={handleInputChange} fullWidth />
+            <TextField 
+              label="Estúdio" 
+              name="work" 
+              value={formData.work} 
+              onChange={handleInputChange} 
+              fullWidth 
+            />
           </Grid>
-          <Grid item style={{ margin: "2rem" }}>
+
+          <Grid item xs={12} style={{ margin: "1rem" }}>
+            <FormControl fullWidth>
+              <InputLabel id="dia-label">Selecione o Dia</InputLabel>
+              <Select
+                labelId="dia-label"
+                value={diaSelecionado}
+                label="Selecione o Dia"
+                onChange={(e) => {
+                  setDiaSelecionado(e.target.value);
+                  // Limpa a categoria quando muda o dia
+                  setFormData(prev => ({ ...prev, category: "" }));
+                }}
+              >
+                <MenuItem value="">
+                  <em>-- escolha --</em>
+                </MenuItem>
+                {dias.map((d) => (
+                  <MenuItem key={d} value={d}>
+                    {d}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+       
+          {diaSelecionado && (
+            <Grid item xs={12} style={{ margin: "1rem" }}>
+              <FormControl fullWidth>
+                <InputLabel id="categoria-label">Selecione a Categoria</InputLabel>
+                <Select
+                  labelId="categoria-label"
+                  value={formData.category}
+                  label="Selecione a Categoria"
+                  onChange={(e) => handleCategoryChange(e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>-- escolha --</em>
+                  </MenuItem>
+                  {categoriasFiltradas.map((categoria) => (
+                    <MenuItem key={categoria} value={categoria}>
+                      {categoria}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
+
+          {formData.category && (
+            <Grid item xs={12} style={{ margin: "1rem" }}>
+              <Typography variant="body1">
+                Categoria selecionada: <b>{formData.category}</b> ({categoryToDay[formData.category]})
+              </Typography>
+            </Grid>
+          )}
+
+          <Grid item xs={12} style={{ margin: "2rem" }}>
             <Button variant="contained" color="primary" type="submit">
               Salvar
             </Button>
           </Grid>
         </FormControl>
       </Grid>
-      {/* Snackbar */}
     </form>
   );
 }
