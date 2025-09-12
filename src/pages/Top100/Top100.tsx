@@ -110,31 +110,84 @@ export default function Top100() {
 
       <Grid container spacing={2}>
         {sortedUsers.map((user, index) => (
-          <Grid key={index} item xs={12} sm={6} md={4} lg={3}>
+          <Grid key={index} item>
             <Paper sx={{
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              backgroundColor: "#e3d5ca",
-              borderRadius: "8px",
-              padding: "1rem"
+          flex: 1, 
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+          backgroundColor: "#e3d5ca",
+          borderRadius: "8px",
+          padding: "1rem",
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          width: "270px",
+
             }}>
-              <Box sx={{ textAlign: "center", marginBottom: "1rem"}}>
-                <Typography variant="h6" sx={{ fontWeight: "bold"}}>
-                  {index + 1}. {user.name}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="body1">Anatomia: {user.anatomy}</Typography>
-                <Typography variant="body1">Criatividade: {user.creativity}</Typography>
-                <Typography variant="body1">Pigmentação: {user.pigmentation}</Typography>
-                <Typography variant="body1">Traços: {user.traces}</Typography>
-                <Typography variant="body1">Legibilidade: {user.readability}</Typography>
-                <Typography variant="body1">Impacto Visual: {user.visualImpact}</Typography>
-                <Typography variant="body2">Nota Geral: {user.totalScore}</Typography>
-                {user.category && (
-                  <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-                    Categoria: {user.category}
+              <Box sx={{ flex: 1 }}>
+                <Box sx={{ textAlign: "center", marginBottom: "1rem", flex: 1 }}>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: "bold", 
+                    color: "#2c3e50",
+                    fontSize: "1.1rem"
+                  }}>
+                    {index + 1}. {user.name}
                   </Typography>
-                )}
+                  {user.work && (
+                    <Typography variant="body2" sx={{ 
+                      color: "#7f8c8d", 
+                      fontStyle: "italic",
+                      marginTop: "0.2rem"
+                    }}>
+                      {user.work}
+                    </Typography>
+                  )}
+                </Box>
+                
+                <Box sx={{ marginBottom: "1rem" }}>
+                  <Typography variant="body2" sx={{ 
+                    fontWeight: "bold", 
+                    marginBottom: "0.5rem", 
+                    color: "#2c3e50" 
+                  }}>
+                    Pontuações:
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <Typography variant="body2">Anatomia: {user.anatomy || 0}</Typography>
+                    <Typography variant="body2">Criatividade: {user.creativity || 0}</Typography>
+                    <Typography variant="body2">Pigmentação: {user.pigmentation || 0}</Typography>
+                    <Typography variant="body2">Traços: {user.traces || 0}</Typography>
+                    <Typography variant="body2">Legibilidade: {user.readability || 0}</Typography>
+                    <Typography variant="body2">Imp. Visual: {user.visualImpact || 0}</Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ 
+                  borderTop: "1px solid #bdc3c7", 
+                  paddingTop: "0.8rem",
+                  marginTop: "auto"
+                }}>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: "bold", 
+                    textAlign: "center",
+                    color: "#e74c3c",
+                    marginBottom: "0.5rem"
+                  }}>
+                    Total: {user.totalScore}
+                  </Typography>
+                  {user.category && (
+                    <Typography variant="caption" sx={{ 
+                      display: "block", 
+                      textAlign: "center",
+                      backgroundColor: "#34495e",
+                      color: "white",
+                      padding: "0.3rem 0.6rem",
+                      borderRadius: "12px",
+                      fontSize: "0.7rem"
+                    }}>
+                      {user.category}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             </Paper>
           </Grid>

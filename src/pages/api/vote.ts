@@ -1,3 +1,4 @@
+
 import { createPool } from "@vercel/postgres";
 import { NextApiRequest, NextApiResponse } from "next";
 
@@ -15,16 +16,19 @@ export default async function handlerVote(
     console.log("antes do try");
     console.log(request.body);
     try {
-      // Verifica se o usuário existe
+      // Verifica se o usuário existe e pega a category
       const userResult = await client.query(
-        'SELECT id FROM competidores WHERE id = $1',
+        'SELECT id, category FROM competidores WHERE id = $1',
         [userId]
       );
-        console.log(userId);
+        
+      console.log(userId);
       if (userResult.rowCount === 0) {
         return response.status(404).json({ error: "Usuário não encontrado" });
       }
 
+      const userCategory = userResult.rows[0].category;
+       
       // Atualiza os votos
       const updateResult = await client.query(
         `
@@ -41,7 +45,8 @@ export default async function handlerVote(
         `,
         [userId, anatomy, creativity, pigmentation, traces, readability, visualImpact]
       );
-        console.log(response);
+        
+      console.log(response);
       response.status(200).json(updateResult.rows[0]);
     } catch (error) {
       console.log(response);

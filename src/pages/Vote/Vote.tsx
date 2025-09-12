@@ -19,6 +19,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
         traces: 0,
         readability: 0,
         visualImpact: 0,
+        category: "",
     });
     const [votingUserId, setVotingUserId] = useState<string | null>(null);
 
@@ -76,6 +77,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 traces: 0,
                 readability: 0,
                 visualImpact: 0,
+                category: '',
             });
             onOpenSnackBar("Voto registrado com sucesso");
         } catch (error) {
@@ -196,6 +198,11 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     style={{ marginBottom: "0.5rem" }}
                                     fullWidth
                                 />
+
+                                  <Typography
+                                    variant="caption" sx={{ margin: 2}} fontSize="12" color="#f0f0f0">
+                                    {user.category}
+                                </Typography>
                                 <LinearProgress
                                     variant="determinate"
                                     value={totalVotes > 0
