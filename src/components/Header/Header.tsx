@@ -46,7 +46,7 @@ export const Header = ({ onClick }: any) => {
           }
         }} 
         />
-        feat. linikerS.Dev 
+        {/* feat. linikerS.Dev 
         <DesktopMac sx={{
           fontSize: "3rem",
           transform: "translateZ(40px) rotateZ(10deg)",
@@ -57,7 +57,7 @@ export const Header = ({ onClick }: any) => {
             transform: "translateZ(40px) rotateZ(10deg)",
           }
         }} 
-        />
+        /> */}
       </Typography>
     </Grid>
   )

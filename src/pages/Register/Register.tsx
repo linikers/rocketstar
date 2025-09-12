@@ -1,4 +1,5 @@
-import { Button, FormControl, Grid, TextField } from "@mui/material";
+import { categoryToDay } from "@/utils/categoryMap";
+import { Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
 import React, { FormEvent, useState } from "react";
 
 export interface IUser {
@@ -14,11 +15,16 @@ export interface IUser {
   readability: number;
   visualImpact: number;
   totalScore: number;
+  day: "Sexta" | "Sábado" | "Domingo";
+  category: string;
 }
 
 interface IRegisterProps {
   onRegister: () => void;
 }
+
+
+const dias = ["Sexta", "Sábado", "Domingo"] as const;
 
 export default function Register ({ onRegister }: IRegisterProps) {
   const [formData, setFormData] = useState<IUser>({
@@ -34,10 +40,17 @@ export default function Register ({ onRegister }: IRegisterProps) {
     readability: 0,
     visualImpact: 0,
     totalScore: 0,
+    day: "Sexta",
+    category: "",
   });
   const [ , setSnackbarMessage] = useState("");
   const [ , setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("success");
   const [ , setSnackbarOpen] = useState(false);
+
+    const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null);
+
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,6 +101,8 @@ export default function Register ({ onRegister }: IRegisterProps) {
         readability: 0,
         visualImpact: 0,
         totalScore: 0,
+        day: "Sexta",
+        category: "",
       });
       savedUser();
     } catch (error) {
@@ -96,6 +111,10 @@ export default function Register ({ onRegister }: IRegisterProps) {
       setSnackbarOpen(true);
     }
   };
+
+    const categoriasFiltradas = Object.entries(categoryToDay)
+    .filter(([_, dia]) => dia === diaSelecionado)
+    .map(([categoria]) => categoria);
 
   return (
     <form onSubmit={handleRegister}>
@@ -107,6 +126,81 @@ export default function Register ({ onRegister }: IRegisterProps) {
           <Grid item xs={12} style={{ margin: "1rem" }}>
             <TextField label="Estúdio" name="work" value={formData.work} onChange={handleInputChange} fullWidth />
           </Grid>
+          {/* <Grid item xs={12} style={{ margin: "1rem" }}>
+            <TextField
+              select
+              label="Dia"
+              name="day"
+              value={formData.day}
+              onChange={handleInputChange}
+              SelectProps={{ native: true }}
+              fullWidth
+            >
+              <option value="Sexta">Sexta</option>
+              <option value="Sábado">Sábado</option>
+              <option value="Domingo">Domingo</option>
+            </TextField>
+          </Grid> */}
+
+          {/* <Grid item xs={12} style={{ margin: "1rem" }}>
+            <TextField
+              label="Categoria"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              fullWidth
+            />
+          </Grid> */}
+
+<FormControl fullWidth>
+         <InputLabel id="dia-label">Selecione o Dia</InputLabel>
+         <Select
+           labelId="dia-label"
+           value={diaSelecionado}
+           label="Selecione o Dia"
+           onChange={(e) => {
+             setDiaSelecionado(e.target.value);
+             setCategoriaSelecionada("");
+           }}
+         >
+           <MenuItem value="">
+             <em>-- escolha --</em>
+           </MenuItem>
+           {dias.map((d) => (
+             <MenuItem key={d} value={d}>
+               {d}
+             </MenuItem>
+           ))}
+         </Select>
+       </FormControl>
+       
+            {diaSelecionado && (
+              <FormControl fullWidth>
+                <InputLabel id="categoria-label">Selecione a Categoria</InputLabel>
+                <Select
+                  labelId="categoria-label"
+                  value={categoriaSelecionada}
+                  label="Selecione a Categoria"
+                  onChange={(e) => setCategoriaSelecionada(e.target.value)}
+                >
+                  <MenuItem value="">
+                    <em>-- escolha --</em>
+                  </MenuItem>
+                  {categoriasFiltradas.map((categoria) => (
+                    <MenuItem key={categoria} value={categoria}>
+                      {categoria}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+      )}
+
+      {categoriaSelecionada && (
+        <Typography variant="body1">
+          Você escolheu: <b>{categoriaSelecionada}</b> ({diaSelecionado})
+        </Typography>
+      )}
+
           <Grid item style={{ margin: "2rem" }}>
             <Button variant="contained" color="primary" type="submit">
               Salvar
