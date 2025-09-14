@@ -13,7 +13,7 @@ export interface IUser {
   pigmentation: number;
   traces: number;
   readability: number;
-  visualImpact: number;
+  visualimpact: number;
   totalScore: number;
   day: "Sexta" | "Sábado" | "Domingo";
   category: string;
@@ -37,7 +37,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
     pigmentation: 0,
     traces: 0,
     readability: 0,
-    visualImpact: 0,
+    visualimpact: 0,
     totalScore: 0,
     day: "Sexta",
     category: "",
@@ -54,7 +54,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
       ...prevState,
       [name]: name === 'votes' || name === 'anatomy' || name === 'creativity' || 
               name === 'pigmentation' || name === 'traces' || name === 'readability' || 
-              name === 'visualImpact' || name === 'totalScore' ? parseFloat(value) : value,
+              name === 'visualimpact' || name === 'totalScore' ? parseFloat(value) : value,
     }));
   };
 
@@ -107,7 +107,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
         pigmentation: 0,
         traces: 0,
         readability: 0,
-        visualImpact: 0,
+        visualimpact: 0,
         totalScore: 0,
         day: "Sexta",
         category: "",

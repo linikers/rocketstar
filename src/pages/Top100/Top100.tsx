@@ -45,7 +45,7 @@ export default function Top100() {
         (user.pigmentation || 0) +
         (user.traces || 0) +
         (user.readability || 0) +
-        (user.visualImpact || 0)
+        (user.visualimpact || 0)
     }))
     .filter(user => {
       // Se o usuário não tem categoria, não mostra (categoria é obrigatória agora)
@@ -157,7 +157,7 @@ export default function Top100() {
                     <Typography variant="body2">Pigmentação: {user.pigmentation || 0}</Typography>
                     <Typography variant="body2">Traços: {user.traces || 0}</Typography>
                     <Typography variant="body2">Legibilidade: {user.readability || 0}</Typography>
-                    <Typography variant="body2">Imp. Visual: {user.visualImpact || 0}</Typography>
+                    <Typography variant="body2">Imp. Visual: {user.visualimpact || 0}</Typography>
                   </Box>
                 </Box>
 
