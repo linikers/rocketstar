@@ -42,7 +42,7 @@ export default function Top100() {
       totalScore:
         (user.anatomy || 0) +
         (user.creativity || 0) +
-        (user.pigmentation || 0) +
+        (user.pigmentation || 0) +    
         (user.traces || 0) +
         (user.readability || 0) +
         (user.visualimpact || 0)
