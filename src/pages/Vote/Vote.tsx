@@ -222,15 +222,16 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                 <Typography variant="caption" style={{ display: "block", marginTop: "0.5rem" }}>
                                     {user.votes} votos ({totalVotes > 0 ? ((user.votes / totalVotes) * 100).toFixed(2) : 0} %)
                                 </Typography>
-                                <Button
+                                {/* <Button
                                     variant="contained"
                                     color="primary"
                                     onClick={() => handleVote(user.id)}
                                     style={{ marginTop: "1rem" }}
                                     disabled={votingUserId === user.id}
+                                    disabled={true}
                                 >
                                     Votar
-                                </Button>
+                                </Button> */}
                             </Grid>
                         ))
                     ) : (
