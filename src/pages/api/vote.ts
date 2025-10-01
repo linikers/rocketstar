@@ -15,10 +15,10 @@ export default async function handlerVote(
     return response.status(405).end(`Método ${request.method} não permitido`);
   }
 
-  const { userId, anatomy, creativity, pigmentation, traces, readability, visualImpact } = request.body;
-
+  // const { userId, anatomy, creativity, pigmentation, traces, readability, visualImpact } = request.body;
+  const { competidorId, jurorId, anatomy, creativity, pigmentation, traces, readability, visualImpact } = request.body;
   // Validação básica dos dados recebidos
-  if (!userId || anatomy == null || creativity == null || pigmentation == null || traces == null || readability == null || visualImpact == null) {
+  if (!competidorId || !jurorId || anatomy == null || creativity == null || pigmentation == null || traces == null || readability == null || visualImpact == null) {
       return response.status(400).json({ error: "Dados de votação incompletos. Todos os campos de nota são obrigatórios." });
   }
 
@@ -29,10 +29,17 @@ export default async function handlerVote(
 
     // 1. Insere o voto individual na nova tabela 'votos'
     const insertVoteQuery = `
-      INSERT INTO votos (competidor_id, anatomy, creativity, pigmentation, traces, readability, visual_impact)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO votos (competidor_id, juror_id, anatomy, creativity, pigmentation, traces, readability, visual_impact)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ON CONFLICT (competidor_id, juror_id) DO UPDATE SET
+        anatomy = EXCLUDED.anatomy,
+        creativity = EXCLUDED.creativity,
+        pigmentation = EXCLUDED.pigmentation,
+        traces = EXCLUDED.traces,
+        readability = EXCLUDED.readability,
+        visual_impact = EXCLUDED.visual_impact;
     `;
-    await client.query(insertVoteQuery, [userId, anatomy, creativity, pigmentation, traces, readability, visualImpact]);
+    await client.query(insertVoteQuery, [competidorId, jurorId, anatomy, creativity, pigmentation, traces, readability, visualImpact]);
 
     // 2. Atualiza os scores agregados na tabela 'competidores'
     // Esta query soma todas as notas da tabela 'votos' para um competidor e atualiza a tabela principal.
@@ -66,7 +73,7 @@ export default async function handlerVote(
       RETURNING *;
     `;
     
-    const updateResult = await client.query(updateCompetidorQuery, [userId]);
+    const updateResult = await client.query(updateCompetidorQuery, [competidorId]);
 
     await client.query('COMMIT');
 
@@ -76,9 +83,11 @@ export default async function handlerVote(
 
     response.status(200).json(updateResult.rows[0]);
 
-  } catch (error) {
+  } catch (error: any) {
     await client.query('ROLLBACK');
-    console.error("Erro ao processar o voto:", error);
+    if (error.code === '23505') { // Código de erro para unique_violation no PostgreSQL
+      return response.status(409).json({ error: "Este jurado já votou neste competidor." });
+  }
     response.status(500).json({ error: "Erro ao processar o voto" });
   } finally {
     client.release();
