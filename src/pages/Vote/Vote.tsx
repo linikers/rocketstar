@@ -20,6 +20,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
         readability: 0,
         visualImpact: 0,
         category: "",
+        competidorId: "",
+        juradoId: "",
     });
     const [votingUserId, setVotingUserId] = useState<string | null>(null);
 
@@ -49,7 +51,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
     };
-
+ 
     const handleVote = async (userId: string) => {
         setVotingUserId(userId);
 
@@ -58,7 +60,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
             const response = await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...voteValues, userId })
+                body: JSON.stringify({ ...voteValues, competidorId, jurorId })
             });
             if (!response.ok) {
                 throw new Error('Erro ao registrar voto');
@@ -78,6 +80,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 readability: 0,
                 visualImpact: 0,
                 category: '',
+                competidorId: '',
+                jurorId: '',
             });
             onOpenSnackBar("Voto registrado com sucesso");
         } catch (error) {
@@ -222,16 +226,16 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                 <Typography variant="caption" style={{ display: "block", marginTop: "0.5rem" }}>
                                     {user.votes} votos ({totalVotes > 0 ? ((user.votes / totalVotes) * 100).toFixed(2) : 0} %)
                                 </Typography>
-                                {/* <Button
+                                <Button
                                     variant="contained"
                                     color="primary"
                                     onClick={() => handleVote(user.id)}
                                     style={{ marginTop: "1rem" }}
                                     disabled={votingUserId === user.id}
-                                    disabled={true}
+                                    // disabled={true}
                                 >
                                     Votar
-                                </Button> */}
+                                </Button>
                             </Grid>
                         ))
                     ) : (
