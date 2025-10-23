@@ -1,55 +1,85 @@
-
-import { createPool } from "@vercel/postgres";
+import clientPromise from "@/lib/mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
-
-const client = createPool({
-  connectionString: process.env.POSTGRES_URL,
-});
+import { ObjectId } from "mongodb";
 
 export default async function handlerVote(
   request: NextApiRequest,
   response: NextApiResponse
 ) {
-  console.log(request.method);
   if (request.method === 'POST') {
-    const { userId, anatomy, creativity, pigmentation, traces, readability, visualImpact } = request.body;
-    console.log("antes do try");
-    console.log(request.body);
+    const { competidorId, juradoId, anatomy, creativity, pigmentation, traces, readability, visualImpact } = request.body;
+
+    if (!competidorId || !juradoId) {
+      return response.status(400).json({ error: "competidorId e juradoId são obrigatórios." });
+    }
+
     try {
-      // Verifica se o usuário existe e pega a category
-      const userResult = await client.query(
-        'SELECT id, category FROM competidores WHERE id = $1',
-        [userId]
+      const client = await clientPromise;
+      const db = client.db("rocketstar");
+      const competidoresCollection = db.collection("competidores");
+
+      const competidorObjectId = new ObjectId(competidorId);
+
+      // Passo 1: Remove o voto antigo do jurado (se existir) para garantir que não haja duplicatas.
+      await competidoresCollection.updateOne(
+        { _id: competidorObjectId },
+        { $pull: { votos: { juradoId: juradoId } } }
       );
-        
-      console.log(userId);
-      if (userResult.rowCount === 0) {
-        return response.status(404).json({ error: "Usuário não encontrado" });
+
+      // Passo 2: Adiciona o novo voto ao array de votos.
+      const novoVoto = {
+        juradoId,
+        anatomy: Number(anatomy) || 0,
+        creativity: Number(creativity) || 0,
+        pigmentation: Number(pigmentation) || 0,
+        traces: Number(traces) || 0,
+        readability: Number(readability) || 0,
+        visualImpact: Number(visualImpact) || 0,
+      };
+
+      await competidoresCollection.updateOne(
+        { _id: competidorObjectId },
+        { $push: { votos: novoVoto } }
+      );
+
+      // Passo 3: Recalcula e atualiza os totais usando um pipeline de agregação.
+      // Isso é muito mais eficiente do que buscar os dados, calcular no servidor e atualizar de novo.
+      const updatedCompetitor = await competidoresCollection.findOneAndUpdate(
+        { _id: competidorObjectId },
+        [ // Início do pipeline de agregação
+          {
+            $set: {
+              anatomy: { $sum: '$votos.anatomy' },
+              creativity: { $sum: '$votos.creativity' },
+              pigmentation: { $sum: '$votos.pigmentation' },
+              traces: { $sum: '$votos.traces' },
+              readability: { $sum: '$votos.readability' },
+              visualImpact: { $sum: '$votos.visualImpact' },
+            }
+          },
+          {
+            $set: {
+              totalScore: {
+                $add: [
+                  '$anatomy', '$creativity', '$pigmentation',
+                  '$traces', '$readability', '$visualImpact'
+                ]
+              }
+            }
+          }
+        ],
+        {
+          returnDocument: 'after' // Retorna o documento já atualizado
+        }
+      );
+
+      if (!updatedCompetitor) {
+        return response.status(404).json({ error: "Competidor não encontrado após a atualização." });
       }
 
-      const userCategory = userResult.rows[0].category;
-       
-      // Atualiza os votos
-      const updateResult = await client.query(
-        `
-        UPDATE competidores
-        SET 
-          anatomy = COALESCE($2, anatomy),
-          creativity = COALESCE($3, creativity),
-          pigmentation = COALESCE($4, pigmentation),
-          traces = COALESCE($5, traces),
-          readability = COALESCE($6, readability),
-          visualimpact = COALESCE($7, visualimpact)
-        WHERE id = $1
-        RETURNING *
-        `,
-        [userId, anatomy, creativity, pigmentation, traces, readability, visualImpact]
-      );
-        
-      console.log(response);
-      response.status(200).json(updateResult.rows[0]);
+      response.status(200).json(updatedCompetitor);
+
     } catch (error) {
-      console.log(response);
       console.error("Erro ao atualizar os votos:", error);
       response.status(500).json({ error: "Erro ao atualizar os votos" });
     }
