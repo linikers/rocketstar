@@ -25,8 +25,8 @@ export default async function handler(request: NextApiRequest, response: NextApi
       try {
         const savedCompetidor = await Competidor.create(newCompetitorData);
 
-        console.log('Competidor salvo com sucesso:', savedCompetitor);
-        return response.status(201).json(savedCompetitor);
+        console.log('Competidor salvo com sucesso:', savedCompetidor);
+        return response.status(201).json(savedCompetidor);
       } catch (error) {
         console.error('Erro ao inserir competidor:', error);
         return response.status(500).json({ error: 'Erro ao cadastrar competidor.' });

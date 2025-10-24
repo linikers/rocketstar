@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 // Define the interface for a single vote subdocument
 export interface IVoto {
-  juradoId: string;
+  juradoId: mongoose.Types.ObjectId;
   anatomy: number;
   creativity: number;
   pigmentation: number;
@@ -27,7 +27,7 @@ export interface ICompetidor extends Document {
 }
 
 const VotoSchema: Schema = new Schema({
-  juradoId: { type: String, required: true },
+  juradoId: { type: Schema.Types.ObjectId, ref: 'Jurado', required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
   pigmentation: { type: Number, default: 0 },
@@ -54,4 +54,3 @@ const CompetidorSchema: Schema = new Schema({
 const Competidor = mongoose.models.Competidor || mongoose.model<ICompetidor>('Competidor', CompetidorSchema);
 
 export default Competidor;
-
