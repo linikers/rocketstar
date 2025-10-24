@@ -1,10 +1,11 @@
-import clientPromise from "@/lib/mongodb";
+import dbConnect from "@/lib/mongodb";
+import Competidor from "@/models/competidor";
+// import Competidor from "@/models/Competidor"; // Importa o modelo Competidor
 import { NextApiRequest, NextApiResponse } from "next/types";
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   try {
-    const client = await clientPromise;
-    const db = client.db("rocketstar"); // Use o nome do seu banco de dados
+    await dbConnect(); // Conecta ao banco de dados
 
     if (request.method === 'POST') {
       const { name, work, category = null } = request.body;
@@ -14,25 +15,15 @@ export default async function handler(request: NextApiRequest, response: NextApi
         return response.status(400).json({ error: 'Dados incompletos: name e work são obrigatórios.' });
       }
 
-      const newCompetitor = {
+      const newCompetitorData = {
         name,
         work,
         category,
         votos: [], // Array para armazenar os votos individuais
-        anatomy: 0,
-        creativity: 0,
-        pigmentation: 0,
-        traces: 0,
-        readability: 0,
-        visualImpact: 0,
-        totalScore: 0,
       };
 
       try {
-        const result = await db.collection("competidores").insertOne(newCompetitor);
-
-        // O MongoDB retorna o ID inserido, podemos retornar o documento completo
-        const savedCompetitor = { ...newCompetitor, _id: result.insertedId };
+        const savedCompetidor = await Competidor.create(newCompetitorData);
 
         console.log('Competidor salvo com sucesso:', savedCompetitor);
         return response.status(201).json(savedCompetitor);
