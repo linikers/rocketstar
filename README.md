@@ -1,6 +1,6 @@
 # Rocketstar - Sistema de Votação
 
-Este é um projeto Next.js para um sistema de votação em tempo real. O objetivo é permitir que os usuários votem em diferentes categorias, que são organizadas por dia. Os resultados serão armazenados em um banco de dados MongoDB e uma interface com QR code facilitará o acesso dos votantes às enquetes do dia.
+Este é um projeto [Next.js](https://nextjs.org/) para um sistema de votação em tempo real. O objetivo é permitir que os usuários votem em diferentes categorias, que são organizadas por dia. Os resultados serão armazenados em um banco de dados MongoDB e uma interface com QR code facilitará o acesso dos votantes às enquetes do dia. O sistema permitirá o registro de competidores e a contabilização de votos por jurado.
 
 ## Andamento do Projeto
 
@@ -8,41 +8,46 @@ Esta seção detalha o status atual do desenvolvimento, o que já foi implementa
 
 ### Funcionalidades Implementadas
 
-Com base na análise, o seguinte já está funcional:
+Com base na análise, as seguintes funcionalidades já estão implementadas e prontas para uso com MongoDB:
 
 -   **Estrutura Inicial do Projeto:** Projeto configurado com Next.js.
--   **Cadastro de Categorias por Dia:** A lógica para cadastrar e organizar as categorias de votação de acordo com a data está implementada.
+-   **Conexão com MongoDB:** Configuração básica para conexão com o MongoDB.
+-   **Registro de Competidores:**
+    -   API (`/api/save`) para cadastrar novos competidores no MongoDB.
+    -   Interface de usuário (`Register.tsx`) para o registro de competidores, incluindo nome, trabalho e categoria.
+-   **Contabilização de Votos:**
+    -   API (`/api/vote`) para registrar votos de jurados em competidores específicos.
+    -   Lógica de backend para atualizar o array de votos e recalcular os scores totais do competidor de forma atômica no MongoDB.
+-   **Listagem de Competidores:**
+    -   API (`/api/list`) para listar todos os competidores cadastrados no MongoDB.
+-   **Modelos de Dados:** Modelos `Competidor` e `Jurado` definidos para o MongoDB.
 
 ### Próximos Passos / Funcionalidades Faltantes
 
-Para que o sistema de votação esteja completo, as seguintes funcionalidades precisam ser desenvolvidas:
+Para que o sistema de votação esteja completo e atenda a todos os requisitos, as seguintes funcionalidades precisam ser desenvolvidas:
 
-1.  **Contabilização dos Votos:**
-    -   [ ] Criar a lógica de backend para receber e incrementar os votos para cada opção dentro de uma categoria.
-    -   [ ] Garantir que um usuário/dispositivo não possa votar múltiplas vezes na mesma categoria (se for um requisito).
+1.  **Estrutura de Eventos/Votações por Dia (Model `Evento`):**
+    -   [ ] **Criar Model `Evento`:** Implementar um modelo `Evento` (ou `Votacao`) para agrupar categorias e competidores por data, permitindo gerenciar "votações do dia".
+    -   [ ] **Atualizar Model `Competidor`:** Modificar o modelo `Competidor` para incluir uma referência ao `Evento` ao qual pertence.
+    -   [ ] **Atualizar API de Registro (`/api/save`):** Adaptar a API para associar competidores a um `Evento` específico.
+    -   [ ] **APIs de Gerenciamento de Eventos:** Criar APIs para criar, listar e gerenciar os eventos de votação.
 
-2.  **Integração com MongoDB:**
-    -   [ ] Configurar a conexão com um banco de dados MongoDB.
-    -   [ ] Definir os *schemas* para as coleções (ex: `Categorias`, `OpcoesDeVoto`, `Votos`).
-    -   [ ] Implementar as rotas de API para salvar e recuperar os dados do MongoDB (categorias, votos, etc.). Atualmente, os dados podem estar sendo armazenados de forma volátil.
-
-3.  **Página de Acesso para Votantes com QR Code:**
-    -   [ ] Desenvolver uma página pública (`/votacao` ou similar) que exiba as categorias de votação ativas para o dia atual.
-    -   [ ] Criar uma interface para o usuário selecionar uma opção e registrar seu voto.
-    -   [ ] Gerar um QR Code que aponte para a URL desta página de votação, para ser facilmente compartilhado.
+2.  **Página Pública de Votação e QR Code:**
+    -   [ ] **Página de Votação:** Desenvolver uma página no frontend (`/votacao` ou similar) que:
+        -   Busque e exiba os `Eventos` ativos para o dia atual.
+        -   Liste as categorias e os competidores associados a esses eventos.
+        -   Permita que os usuários visualizem os competidores e registrem seus votos (interagindo com a API `/api/vote`).
+    -   [ ] **Geração de QR Code:** Implementar a funcionalidade para gerar um QR Code que direcione os votantes para a página de votação do dia.
+    -   [ ] **Controle de Voto por Jurado/Dispositivo:** Implementar a lógica para garantir que um jurado (ou dispositivo) vote apenas uma vez por competidor/categoria, conforme o requisito.
+3.  **Visualização de Resultados:**
+    -   [ ] Criar uma página ou seção para exibir os resultados das votações em tempo real ou após o encerramento, possivelmente com gráficos e rankings.
 
 ## Como Iniciar
 
 Primeiro, execute o servidor de desenvolvimento:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run dev # ou yarn dev, pnpm dev, bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
