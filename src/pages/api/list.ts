@@ -1,26 +1,29 @@
-import { createPool } from "@vercel/postgres";
+// Importa a função de conexão com o MongoDB
+import dbConnect from "@/lib/mongodb";
+import Competidor from "@/models/Competidor";
+// Importa o modelo Competidor
+// import Competidor from "@/models/competidor";
 import { NextApiRequest, NextApiResponse } from "next/types";
-
-const pool = createPool({
-  connectionString: process.env.POSTGRES_URL,
-});
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   try {
+    await dbConnect(); // Conecta ao banco de dados
+
     if (request.method === 'GET') {
       try {
-        const result = await pool.query('SELECT * FROM competidores');
-        return response.status(200).json(result.rows);
+        // Busca todos os competidores no MongoDB
+        const competidores = await Competidor.find({});
+        return response.status(200).json(competidores);
       } catch (error) {
         console.error('Erro ao listar competidores:', error);
         return response.status(500).json({ error: 'Erro ao listar competidores.' });
       }
     } else {
-      response.setHeader("Permitido", ['GET']);
-      return response.status(405).end(`Method ${request.method} Sem permissão`);
+      response.setHeader("Allow", ['GET']);
+      return response.status(405).end(`Method ${request.method} Not Allowed`);
     }
   } catch (error) {
     console.error('Erro na API handler:', error);
-    return response.status(500).json({ error: 'Erro interno do servidor.' });
   }
+  return response.status(500).json({ error: 'Erro interno do servidor.' });
 }

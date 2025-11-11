@@ -2,7 +2,8 @@ import dbConnect from "@/lib/mongodb";
 // import Competidor, { IVoto } from "@/models/Competidor"; // Importa o modelo Competidor e a interface IVoto
 import { NextApiRequest, NextApiResponse } from "next";
 import mongoose, { Types } from "mongoose"; // Importa mongoose para usar ObjectId
-import Competidor, { IVoto } from "@/models/competidor";
+import Competidor, { IVoto } from "@/models/Competidor";
+// import Competidor, { IVoto } from "@/models/competidor";
 
 export default async function handlerVote(
   request: NextApiRequest,
@@ -72,15 +73,18 @@ export default async function handlerVote(
             traces: { $sum: '$votos.traces' },
             readability: { $sum: '$votos.readability' },
             visualImpact: { $sum: '$votos.visualImpact' },
-          }
-        },
-        // Passo 4: Recalcula o placar total
-        {
-          $set: {
+        //   }
+        // },
+        // // Passo 4: Recalcula o placar total
+        // {
+        //   $set: {
             totalScore: {
               $add: [
-                '$anatomy', '$creativity', '$pigmentation',
-                '$traces', '$readability', '$visualImpact'
+                // '$anatomy', '$creativity', '$pigmentation',
+                // '$traces', '$readability', '$visualImpact'
+                { $sum: '$votos.anatomy' }, { $sum: '$votos.creativity' },
+                { $sum: '$votos.pigmentation' }, { $sum: '$votos.traces' },
+                { $sum: '$votos.readability' }, { $sum: '$votos.visualImpact' }
               ]
             }
           }
@@ -90,18 +94,9 @@ export default async function handlerVote(
         new: true, // Retorna o documento modificado
         runValidators: true // Executa os validadores do esquema Mongoose
       }
-    );
-
-    if (!updatedCompetitor) {
-      return response.status(404).json({ error: "Competidor não encontrado após a atualização." });
-    }
-
-    response.status(200).json(updatedCompetitor);
-  } catch (error: any) {
-    console.error("Erro ao atualizar os votos:", error);
-    if (error.name === 'ValidationError') { // Erros de validação do Mongoose
-      return response.status(400).json({ error: error.message });
-    }
-    response.status(500).json({ error: "Erro ao atualizar os votos", details: error.message });
+    )
+  } catch (error) {
+    console.error('Erro ao votar:', error);
+    return response.status(500).json({ error: 'Erro ao votar.' });
   }
 }
