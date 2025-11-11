@@ -15,7 +15,6 @@ const VotacaoSchema: Schema = new Schema({
   ativo: { type: Boolean, default: true }, // Para controlar se a votação está aberta
 });
 
-const Votacao = mongoose.models.Evento || mongoose.model<IVotacao>('Evento', VotacaoSchema);
+const Votacao = mongoose.models.Votacao || mongoose.model<IVotacao>('Votacao', VotacaoSchema);
 
 export default Votacao;
-
