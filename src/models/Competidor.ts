@@ -16,8 +16,10 @@ export interface IVoto {
 export interface ICompetidor extends Document {
   name: string;
   work: string;
-  category?: string;
+  // category?: string;
   votos: IVoto[]; // Array of subdocuments
+  eventoId: mongoose.Types.ObjectId;
+  category: string;
   anatomy: number;
   creativity: number;
   pigmentation: number;
@@ -40,8 +42,10 @@ const VotoSchema: Schema = new Schema({
 const CompetidorSchema: Schema = new Schema({
   name: { type: String, required: true },
   work: { type: String, required: true },
-  category: { type: String, default: null },
+  // category: { type: String, default: null },
   votos: [VotoSchema], // Array de subdocumentos de votos
+  enventoId: { type: Schema.Types.ObjectId, ref: 'Votacao', required: true },
+  category: { type: String, required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
   pigmentation: { type: Number, default: 0 },

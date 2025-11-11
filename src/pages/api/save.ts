@@ -1,5 +1,6 @@
 import dbConnect from "@/lib/mongodb";
-import Competidor from "@/models/competidor";
+import Competidor from "@/models/Competidor";
+// import Competidor from "@/models/competidor";
 // import Competidor from "@/models/Competidor"; // Importa o modelo Competidor
 import { NextApiRequest, NextApiResponse } from "next/types";
 
@@ -8,16 +9,17 @@ export default async function handler(request: NextApiRequest, response: NextApi
     await dbConnect(); // Conecta ao banco de dados
 
     if (request.method === 'POST') {
-      const { name, work, category = null } = request.body;
+      const { name, work, category, eventoId = null } = request.body;
 
       // Validação básica
-      if (!name || !work) {
+      if (!name || !work || !category || !eventoId) {
         return response.status(400).json({ error: 'Dados incompletos: name e work são obrigatórios.' });
       }
 
       const newCompetitorData = {
         name,
         work,
+        eventoId,
         category,
         votos: [], // Array para armazenar os votos individuais
       };

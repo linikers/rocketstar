@@ -12,7 +12,18 @@ export default async function handler(request: NextApiRequest, response: NextApi
     if (request.method === 'GET') {
       try {
         // Busca todos os competidores no MongoDB
-        const competidores = await Competidor.find({});
+        // const competidores = await Competidor.find({});
+        const { eventoId } = request.query;
+
+        const filter: { eventoId?: string } = {};
+        if (eventoId) {
+          filter.eventoId = eventoId as string;
+        }
+
+        // Busca competidores com base no filtro.
+        // O .populate('eventoId') substitui o ID do evento pelos dados completos do evento.
+        const competidores = await Competidor.find(filter).populate('eventoId');
+
         return response.status(200).json(competidores);
       } catch (error) {
         console.error('Erro ao listar competidores:', error);
