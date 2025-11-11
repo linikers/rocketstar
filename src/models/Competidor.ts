@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import './Jurado';
+import './Votacao';
 
 // Define the interface for a single vote subdocument
 export interface IVoto {
@@ -17,8 +18,8 @@ export interface ICompetidor extends Document {
   name: string;
   work: string;
   // category?: string;
-  votos: IVoto[]; // Array of subdocuments
-  eventoId: mongoose.Types.ObjectId;
+  votos: IVoto[];
+  votacaoId: mongoose.Types.ObjectId;
   category: string;
   anatomy: number;
   creativity: number;
@@ -43,8 +44,8 @@ const CompetidorSchema: Schema = new Schema({
   name: { type: String, required: true },
   work: { type: String, required: true },
   // category: { type: String, default: null },
-  votos: [VotoSchema], // Array de subdocumentos de votos
-  enventoId: { type: Schema.Types.ObjectId, ref: 'Votacao', required: true },
+  votos: [VotacaoSchema], // Array de subdocumentos de votos
+  votacaoId: { type: Schema.Types.ObjectId, ref: 'Votacao', required: true },
   category: { type: String, required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
