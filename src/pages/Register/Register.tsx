@@ -17,6 +17,8 @@ export interface IUser {
   totalScore: number;
   day: "Sexta" | "Sábado" | "Domingo";
   category: string;
+  competidorId?: string;
+  jurorId?: string;
 }
 
 interface IRegisterProps {

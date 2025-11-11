@@ -9,7 +9,9 @@ interface VoteProps {
 }
 
 export default function Vote ({ onOpenSnackBar }: VoteProps) {
-    const [totalVotes, setTotalVotes] = useState(0);
+    // const [totalVotes, setTotalVotes] = useState(0);
+    const [totalScoreSum, setTotalScoreSum] = useState(0);
+    // const [totalVotes, setTotalVotes] = useState(0);
     const [loading, setLoading] = useState<boolean>(false);
     const [users, setUsers] = useState<IUser[]>([]);
     const [voteValues, setVoteValues] = useState({
@@ -20,9 +22,11 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
         readability: 0,
         visualImpact: 0,
         category: "",
+        // competidorId: "",
+        // juradoId: "",
     });
     const [votingUserId, setVotingUserId] = useState<string | null>(null);
-
+    const [juradoId, setJuradoId] = useState<string>(""); // Estado para o ID do jurado
     useEffect(() => {
         const fetchUsers = async () => {
             try {
@@ -33,8 +37,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 }
                 const data = await response.json();
                 setUsers(data);
-                const total = data.reduce((acc: number, user: { votes: number }) => acc + user.votes, 0);
-                setTotalVotes(total);
+                const total = data.reduce((acc: number, user: { totalScore: number }) => acc + user.totalScore, 0);
+                setTotalScoreSum(total);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
                 onOpenSnackBar("Erro ao listar competidores");
@@ -49,27 +53,36 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
     };
-
+ 
     const handleVote = async (userId: string) => {
         setVotingUserId(userId);
 
+        if (!juradoId) {
+            onOpenSnackBar("Por favor, insira o ID do Jurado antes de votar.");
+            return;
+        }
         try {
             setLoading(true);
             const response = await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...voteValues, userId })
+                body: JSON.stringify({ 
+                    ...voteValues, 
+                    competidorId: userId, // ID do competidor que está recebendo o voto
+                    juradoId: juradoId, // ID do jurado que está votando
+                })
             });
             if (!response.ok) {
                 throw new Error('Erro ao registrar voto');
             }
             const updatedUser = await response.json();
             const updatedUsers = users.map(
-                (user) => user.id === updatedUser.id ? updatedUser : user
+                (user) => user.id === updatedUser._id ? { ...user, ...updatedUser } : user
             );
+
             setUsers(updatedUsers);
-            const newTotalVotes = updatedUsers.reduce((acc, user) => acc + user.votes, 0);
-            setTotalVotes(newTotalVotes);
+            const newTotalScore = updatedUsers.reduce((acc, user) => acc + user.totalScore, 0);
+            setTotalScoreSum(newTotalScore);
             setVoteValues({
                 anatomy: 0,
                 creativity: 0,
@@ -103,10 +116,21 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 <Typography variant="h4" gutterBottom style={{ marginBottom: "6rem" }}>Vote Agora</Typography>
             </Grid>
 
+                        {/* Campo para inserir o ID do Jurado */}
+                        <TextField
+                label="ID do Jurado"
+                value={juradoId}
+                onChange={(e) => setJuradoId(e.target.value)}
+                variant="outlined"
+                fullWidth
+                required
+                sx={{ marginBottom: '2rem', maxWidth: '500px' }}
+            />
+
             <form style={{ width: "100%" }} onSubmit={(e) => { e.preventDefault(); }}>
                 <Grid container spacing={3} sx={{ width: "100%" }}>
                     {users.length > 0 ? (
-                        users.map((user) => (
+                        users.map((user: any) => (
                             <Grid
                                 key={user.id}
                                 xs={12} item
@@ -205,8 +229,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                 </Typography>
                                 <LinearProgress
                                     variant="determinate"
-                                    value={totalVotes > 0
-                                        ? (user.votes / totalVotes) * 100
+                                    value={totalScoreSum > 0
+                                        ? (user.totalScore / totalScoreSum) * 100
                                         : 0
                                     }
                                     sx={{
@@ -220,18 +244,23 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     }}
                                 />
                                 <Typography variant="caption" style={{ display: "block", marginTop: "0.5rem" }}>
-                                    {user.votes} votos ({totalVotes > 0 ? ((user.votes / totalVotes) * 100).toFixed(2) : 0} %)
+                                    Pontuação: 
+                                        {user.totalScore} 
+                                        ({totalScoreSum > 0 ? 
+                                            ((user.totalScore / totalScoreSum) * 100).toFixed(2)
+                                            : 0
+                                        } %)
                                 </Typography>
-                                {/* <Button
+                                <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={() => handleVote(user.id)}
+                                    onClick={() => handleVote(user._id)}
                                     style={{ marginTop: "1rem" }}
-                                    disabled={votingUserId === user.id}
-                                    disabled={true}
+                                    // disabled={votingUserId === user._id ||juradoId}
+                                    // disabled={true}
                                 >
                                     Votar
-                                </Button> */}
+                                </Button>
                             </Grid>
                         ))
                     ) : (
