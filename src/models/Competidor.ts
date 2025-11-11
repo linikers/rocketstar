@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
+import './Jurado';
 
 // Define the interface for a single vote subdocument
 export interface IVoto {

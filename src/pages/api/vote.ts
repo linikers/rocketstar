@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 // import Competidor, { IVoto } from "@/models/Competidor"; // Importa o modelo Competidor e a interface IVoto
 import { NextApiRequest, NextApiResponse } from "next";
-import mongoose from "mongoose"; // Importa mongoose para usar ObjectId
+import mongoose, { Types } from "mongoose"; // Importa mongoose para usar ObjectId
 import Competidor, { IVoto } from "@/models/competidor";
 
 export default async function handlerVote(
@@ -24,15 +24,15 @@ export default async function handlerVote(
       return response.status(400).json({ error: "competidorId e juradoId são obrigatórios." });
     }
 
-    // Valida se o competidorId é um ObjectId válido do MongoDB
-    if (!mongoose.Types.ObjectId.isValid(competidorId)) {
-      return response.status(400).json({ error: "ID do competidor inválido." });
-    }
+      // Valida se o juradoId é um ObjectId válido do MongoDB
+      if (!Types.ObjectId.isValid(juradoId)) {
+        return response.status(400).json({ error: "ID do jurado inválido." });
+      }
 
     await dbConnect(); // Garante a conexão com o banco de dados
 
     const novoVoto: IVoto = {
-      juradoId: new mongoose.Types.ObjectId(juradoId), // Converte para ObjectId
+      juradoId: new Types.ObjectId(juradoId), // Converte para ObjectId
       anatomy: Number(anatomy) || 0,
       creativity: Number(creativity) || 0,
       pigmentation: Number(pigmentation) || 0,
