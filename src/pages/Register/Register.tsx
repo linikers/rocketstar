@@ -1,6 +1,7 @@
+import { IVotacao } from "@/models/Votacao";
 import { categoryToDay } from "@/utils/categoryMap";
 import { Button, FormControl, Grid, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material";
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 
 export interface IUser {
   id: string;
@@ -25,7 +26,7 @@ interface IRegisterProps {
   onRegister: () => void;
 }
 
-const dias = ["Sexta", "Sábado", "Domingo"] as const;
+// const dias = ["Sexta", "Sábado", "Domingo"] as const;
 
 export default function Register ({ onRegister }: IRegisterProps) {
   const [formData, setFormData] = useState<IUser>({
@@ -48,7 +49,29 @@ export default function Register ({ onRegister }: IRegisterProps) {
   const [, setSnackbarSeverity] = useState<"success" | "error" | "warning" | "info">("success");
   const [, setSnackbarOpen] = useState(false);
 
-  const [diaSelecionado, setDiaSelecionado] = useState<string>("");
+  // const [diaSelecionado, setDiaSelecionado] = useState<string>("");
+  const [votacoes, setVotacoes] = useState<IVotacao[]>([]);
+  const [votacaoSelecionadaId, setVotacaoSelecionadaId] = useState<string>("");
+  const [categoriasDaVotacao, setCategoriasDaVotacao] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchVotacoes = async () => {
+      try {
+        const response = await fetch('/api/votacoes');
+        if (!response.ok) {
+          throw new Error('Erro ao carregar votações');
+        }
+        const data: IVotacao[] = await response.json();
+        setVotacoes(data);
+      } catch (error) {
+        console.error("Falha ao buscar votações:", error);
+        setSnackbarMessage("Erro ao carregar votações.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+      }
+    };
+    fetchVotacoes();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,6 +81,18 @@ export default function Register ({ onRegister }: IRegisterProps) {
               name === 'pigmentation' || name === 'traces' || name === 'readability' || 
               name === 'visualimpact' || name === 'totalScore' ? parseFloat(value) : value,
     }));
+  };
+
+  
+  const handleVotacaoChange = (votacaoId: string) => {
+    setVotacaoSelecionadaId(votacaoId);
+    const votacao = votacoes.find(v => v._id === votacaoId);
+    if (votacao) {
+      setCategoriasDaVotacao(votacao.categorias);
+      setFormData(prev => ({ ...prev, category: "" }));
+    } else {
+      setCategoriasDaVotacao([]);
+    }
   };
 
   const handleCategoryChange = (categoria: string) => {
@@ -70,6 +105,13 @@ export default function Register ({ onRegister }: IRegisterProps) {
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
 
+    if (!votacaoSelecionadaId || !formData.category) {
+      setSnackbarMessage("Por favor, selecione uma votação e uma categoria.");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
     // DEBUG: Verificar se a categoria está sendo enviada
     console.log('FormData sendo enviado:', formData);
     console.log('Category:', formData.category);
@@ -80,8 +122,12 @@ export default function Register ({ onRegister }: IRegisterProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
-      });
+        body: JSON.stringify({
+          name: formData.name,
+          work: formData.work,
+          votacaoId: votacaoSelecionadaId,
+          category: formData.category,
+        }),      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -114,7 +160,8 @@ export default function Register ({ onRegister }: IRegisterProps) {
         day: "Sexta",
         category: "",
       });
-      setDiaSelecionado("");
+      setVotacaoSelecionadaId("");
+      setCategoriasDaVotacao([]);
       
     } catch (error) {
       setSnackbarMessage("Erro ao salvar");
@@ -123,9 +170,9 @@ export default function Register ({ onRegister }: IRegisterProps) {
     }
   };
 
-  const categoriasFiltradas = Object.entries(categoryToDay)
-    .filter(([_, dia]) => dia === diaSelecionado)
-    .map(([categoria]) => categoria);
+  // const categoriasFiltradas = Object.entries(categoryToDay)
+  //   .filter(([_, dia]) => dia === diaSelecionado)
+  //   .map(([categoria]) => categoria);
 
   return (
     <form onSubmit={handleRegister}>
@@ -154,30 +201,26 @@ export default function Register ({ onRegister }: IRegisterProps) {
 
           <Grid item xs={12} style={{ margin: "1rem" }}>
             <FormControl fullWidth>
-              <InputLabel id="dia-label">Selecione o Dia</InputLabel>
+              <InputLabel id="votacao-label">Selecione a votação</InputLabel>
               <Select
-                labelId="dia-label"
-                value={diaSelecionado}
-                label="Selecione o Dia"
-                onChange={(e) => {
-                  setDiaSelecionado(e.target.value);
-                  // Limpa a categoria quando muda o dia
-                  setFormData(prev => ({ ...prev, category: "" }));
-                }}
+                labelId="votacao-label"
+                value={votacaoSelecionadaId}
+                label="Selecione a Votação"
+                onChange={(e) => handleVotacaoChange(e.target.value as string)}
               >
                 <MenuItem value="">
                   <em>-- escolha --</em>
                 </MenuItem>
-                {dias.map((d) => (
-                  <MenuItem key={d} value={d}>
-                    {d}
+                {votacoes.map((v) => (
+                  <MenuItem key={v._id} value={v._id}>
+                    {v.nome} ({new Date(v.data).toLocaleDateString()})
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           </Grid>
        
-          {diaSelecionado && (
+          {votacaoSelecionadaId && (
             <Grid item xs={12} style={{ margin: "1rem" }}>
               <FormControl fullWidth>
                 <InputLabel id="categoria-label">Selecione a Categoria</InputLabel>
@@ -190,7 +233,7 @@ export default function Register ({ onRegister }: IRegisterProps) {
                   <MenuItem value="">
                     <em>-- escolha --</em>
                   </MenuItem>
-                  {categoriasFiltradas.map((categoria) => (
+                  {categoriasDaVotacao.map((categoria) => (
                     <MenuItem key={categoria} value={categoria}>
                       {categoria}
                     </MenuItem>
@@ -202,8 +245,9 @@ export default function Register ({ onRegister }: IRegisterProps) {
 
           {formData.category && (
             <Grid item xs={12} style={{ margin: "1rem" }}>
-              <Typography variant="body1">
-                Categoria selecionada: <b>{formData.category}</b> ({categoryToDay[formData.category]})
+              <Typography variant="body2">
+                Votação: <b>{votacoes.find(v => v._id === votacaoSelecionadaId)?.nome}</b><br/>
+                Categoria selecionada: <b>{formData.category}</b>
               </Typography>
             </Grid>
           )}

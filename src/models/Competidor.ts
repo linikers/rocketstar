@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import './Jurado';
+import './Votacao';
+// import { VotacaoSchema } from './Votacao';
 
 // Define the interface for a single vote subdocument
 export interface IVoto {
-  juradoId: mongoose.Types.ObjectId;
+  // juradoId: mongoose.Types.ObjectId;
   anatomy: number;
   creativity: number;
   pigmentation: number;
@@ -14,11 +16,12 @@ export interface IVoto {
 
 // Define the interface for the main Competidor document
 export interface ICompetidor extends Document {
+  _id: string;
   name: string;
   work: string;
   // category?: string;
   votos: IVoto[]; // Array of subdocuments
-  eventoId: mongoose.Types.ObjectId;
+  votacaoId: mongoose.Types.ObjectId;
   category: string;
   anatomy: number;
   creativity: number;
@@ -30,7 +33,7 @@ export interface ICompetidor extends Document {
 }
 
 const VotoSchema: Schema = new Schema({
-  juradoId: { type: Schema.Types.ObjectId, ref: 'Jurado', required: true },
+  // juradoId: { type: Schema.Types.ObjectId, ref: 'Jurado', required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
   pigmentation: { type: Number, default: 0 },
@@ -44,7 +47,7 @@ const CompetidorSchema: Schema = new Schema({
   work: { type: String, required: true },
   // category: { type: String, default: null },
   votos: [VotoSchema], // Array de subdocumentos de votos
-  enventoId: { type: Schema.Types.ObjectId, ref: 'Votacao', required: true },
+  votacaoId: { type: Schema.Types.ObjectId, ref: 'Votacao', required: true },
   category: { type: String, required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
