@@ -1,5 +1,5 @@
 import { IVotacao } from '@/models/Votacao';
-import { Button, Container, Grid, List, ListItem, ListItemText, TextField, Typography } from '@mui/material';
+import { Button, Container, Grid, IconButton, List, ListItem, ListItemText, TextField, Typography } from '@mui/material';
 import React, { FormEvent, useEffect, useState } from 'react';
 
 export default function AdminVotacaoPage() {
@@ -66,6 +66,22 @@ export default function AdminVotacaoPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta votação?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`/api/votacoes?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Falha ao deletar');
+      fetchVotacoes(); // Atualiza a lista
+      alert('Votação deletada com sucesso.');
+    } catch (error) {
+      alert('Erro ao deletar votação.');
+    }
+  };
+
   return (
     <Container>
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>
@@ -120,7 +136,16 @@ export default function AdminVotacaoPage() {
       <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>Votações Existentes</Typography>
       <List>
         {votacoes.map(votacao => (
-          <ListItem key={votacao._id} divider>
+        //   <ListItem key={votacao._id} divider>
+        <ListItem
+        key={votacao._id}
+        divider
+        secondaryAction={
+          <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(votacao._id)}>
+            <Typography color="error">X</Typography>
+          </IconButton>
+        }
+      >
             <ListItemText primary={votacao.nome} secondary={`Categorias: ${votacao.categorias.join(', ')}`} />
           </ListItem>
         ))}

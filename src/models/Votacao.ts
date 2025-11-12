@@ -8,7 +8,7 @@ export interface IVotacao extends Document {
     ativo: boolean;
 }
 
-const VotacaoSchema: Schema = new Schema({
+export const VotacaoSchema: Schema = new Schema({
   nome: { type: String, required: true },
   data: { type: Date, required: true, default: Date.now },
   // Lista de categorias que fazem parte deste evento, ex: ["Realismo", "Old School"]
@@ -16,7 +16,6 @@ const VotacaoSchema: Schema = new Schema({
   ativo: { type: Boolean, default: true }, // Para controlar se a votação está aberta
 });
 
-const Votacao = mongoose.models.Evento || mongoose.model<IVotacao>('Evento', VotacaoSchema);
+const Votacao = mongoose.models.Votacao || mongoose.model<IVotacao>('Votacao', VotacaoSchema);
 
 export default Votacao;
-
