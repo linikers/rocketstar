@@ -16,24 +16,25 @@ export default async function handlerVote(
 
   try {
     const {
-      competidorId, juradoId,
+      competidorId,
+      // juradoId,
       anatomy, creativity, pigmentation,
       traces, readability, visualImpact
     } = request.body;
 
-    if (!competidorId || !juradoId) {
+    if (!competidorId) {
       return response.status(400).json({ error: "competidorId e juradoId são obrigatórios." });
     }
 
       // Valida se o juradoId é um ObjectId válido do MongoDB
-      if (!Types.ObjectId.isValid(juradoId)) {
-        return response.status(400).json({ error: "ID do jurado inválido." });
-      }
+      // if (!Types.ObjectId.isValid(juradoId)) {
+      //   return response.status(400).json({ error: "ID do jurado inválido." });
+      // }
 
     await dbConnect(); // Garante a conexão com o banco de dados
 
     const novoVoto: IVoto = {
-      juradoId: new Types.ObjectId(juradoId), // Converte para ObjectId
+      // juradoId: new Types.ObjectId(juradoId), // Converte para ObjectId
       anatomy: Number(anatomy) || 0,
       creativity: Number(creativity) || 0,
       pigmentation: Number(pigmentation) || 0,
@@ -46,18 +47,18 @@ export default async function handlerVote(
     const updatedCompetidor = await Competidor.findByIdAndUpdate(
       competidorId,
       [ // Início do pipeline de agregação
-        // Passo 1: Remove o voto antigo do jurado (se existir) para garantir que não haja duplicatas.
-        {
-          $set: {
-            votos: {
-              $filter: {
-                input: "$votos",
-                as: "voto",
-                cond: { $ne: ["$$voto.juradoId", novoVoto.juradoId] }
-              }
-            }
-          }
-        },
+        // // Passo 1: Remove o voto antigo do jurado (se existir) para garantir que não haja duplicatas.
+        // {
+        //   $set: {
+        //     votos: {
+        //       $filter: {
+        //         input: "$votos",
+        //         as: "voto",
+        //         // cond: { $ne: ["$$voto.juradoId", novoVoto.juradoId] }
+        //       }
+        //     }
+        //   }
+        // },
         // Passo 2: Adiciona o novo voto ao array de votos.
         {
           $set: {

@@ -5,7 +5,7 @@ import './Votacao';
 
 // Define the interface for a single vote subdocument
 export interface IVoto {
-  juradoId: mongoose.Types.ObjectId;
+  // juradoId: mongoose.Types.ObjectId;
   anatomy: number;
   creativity: number;
   pigmentation: number;
@@ -33,7 +33,7 @@ export interface ICompetidor extends Document {
 }
 
 const VotoSchema: Schema = new Schema({
-  juradoId: { type: Schema.Types.ObjectId, ref: 'Jurado', required: true },
+  // juradoId: { type: Schema.Types.ObjectId, ref: 'Jurado', required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
   pigmentation: { type: Number, default: 0 },
