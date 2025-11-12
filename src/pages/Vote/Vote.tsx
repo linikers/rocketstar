@@ -77,7 +77,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
             }
             const updatedUser = await response.json();
             const updatedUsers = users.map(
-                (user) => user.id === updatedUser._id ? { ...user, ...updatedUser } : user
+                (user: any) => user._id === updatedUser._id ? { ...user, ...updatedUser } : user
             );
 
             setUsers(updatedUsers);
@@ -254,7 +254,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={() => handleVote(user._id)}
+                                    onClick={() => handleVote((user as any)._id)}
                                     style={{ marginTop: "1rem" }}
                                     // disabled={votingUserId === user._id ||juradoId}
                                     // disabled={true}
