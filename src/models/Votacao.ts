@@ -1,10 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IVotacao extends Document {
-  nome: string;
-  data: Date;
-  categorias: string[];
-  ativo: boolean;
+    _id: string;
+    nome: string;
+    data: Date;
+    categorias: string[];
+    ativo: boolean;
 }
 
 const VotacaoSchema: Schema = new Schema({
