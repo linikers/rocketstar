@@ -9,17 +9,17 @@ export default async function handler(request: NextApiRequest, response: NextApi
     await dbConnect(); // Conecta ao banco de dados
 
     if (request.method === 'POST') {
-      const { name, work, category, eventoId = null } = request.body;
+      const { name, work, category, votacaoId } = request.body;
 
       // Validação básica
-      if (!name || !work || !category || !eventoId) {
-        return response.status(400).json({ error: 'Dados incompletos: name e work são obrigatórios.' });
+      if (!name || !work || !category || !votacaoId) {
+        return response.status(400).json({ error: 'Dados incompletos: name, work, votacaoId e category são obrigatórios.' });
       }
 
       const newCompetitorData = {
         name,
         work,
-        eventoId,
+        votacaoId,
         category,
         votos: [], // Array para armazenar os votos individuais
       };
