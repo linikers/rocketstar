@@ -132,7 +132,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                     {users.length > 0 ? (
                         users.map((user: any) => (
                             <Grid
-                                key={user.id}
+                                key={(user as any)._id}
                                 xs={12} item
                                 sx={{
                                     display: "flex",
@@ -256,8 +256,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     color="primary"
                                     onClick={() => handleVote((user as any)._id)}
                                     style={{ marginTop: "1rem" }}
-                                    // disabled={votingUserId === user._id ||juradoId}
-                                    // disabled={true}
                                 >
                                     Votar
                                 </Button>

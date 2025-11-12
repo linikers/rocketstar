@@ -95,6 +95,12 @@ export default async function handlerVote(
         runValidators: true // Executa os validadores do esquema Mongoose
       }
     )
+
+    if (!updatedCompetidor) {
+      return response.status(404).json({ error: 'Competidor não encontrado.' });
+    }
+
+    return response.status(200).json(updatedCompetidor);
   } catch (error) {
     console.error('Erro ao votar:', error);
     return response.status(500).json({ error: 'Erro ao votar.' });
