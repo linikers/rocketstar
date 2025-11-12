@@ -1,92 +1,93 @@
-import { useEffect, useState } from "react";
-import { IUser } from "../Register/Register";
-import { Box, Grid, Paper, Typography, Tabs, Tab } from "@mui/material";
-import { categoryToDay } from "@/utils/categoryMap";
-
-const dias = ["Sexta", "Sábado", "Domingo"] as const;
+import { useEffect, useState } from 'react';
+import { IUser } from '../Register/Register';
+import { Box, Grid, Paper, Typography, Tabs, Tab } from '@mui/material';
+import { IVotacao } from '@/models/Votacao';
 
 export default function Top100() {
   const [loading, setLoading] = useState<boolean>(false);
   const [users, setUsers] = useState<IUser[]>([]);
-  const [tabIndex, setTabIndex] = useState<number>(0);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>("");
+  const [votacoes, setVotacoes] = useState<IVotacao[]>([]);
+  const [selectedVotacaoId, setSelectedVotacaoId] = useState<string>('');
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string>('');
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    // 1. Busca todas as votações disponíveis para criar as abas
+    const fetchVotacoes = async () => {
       try {
-        setLoading(true);
-        const response = await fetch('/api/list');
+        const response = await fetch('/api/votacoes');
+        if (!response.ok) {
+          throw new Error('Erro ao carregar votações');
+        }
+        const data: IVotacao[] = await response.json();
+        setVotacoes(data);
+        // Seleciona a primeira votação da lista por padrão
+        if (data.length > 0) {
+          setSelectedVotacaoId(data[0]._id);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar votações:', error);
+      }
+    };
+
+    fetchVotacoes();
+  }, []);
+
+  useEffect(() => {
+    // 2. Busca os competidores apenas para a votação selecionada
+    if (!selectedVotacaoId) return;
+
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/list?votacaoId=${selectedVotacaoId}`);
         if (!response.ok) {
           throw new Error('Erro ao listar competidores');
         }
         const data = await response.json();
         setUsers(data);
       } catch (error) {
-        console.error('Erro ao buscar dados:', error);
+        console.error('Erro ao buscar competidores:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [selectedVotacaoId]);
 
   if (loading) return <Typography>Carregando...</Typography>;
 
-  const diaAtual = dias[tabIndex];
-
-  // Calcula totalScore e filtra por dia e categoria
+  // Filtra e ordena os competidores no lado do cliente
   const sortedUsers = [...users]
-    .map(user => ({
-      ...user,
-      totalScore:
-        (user.anatomy || 0) +
-        (user.creativity || 0) +
-        (user.pigmentation || 0) +    
-        (user.traces || 0) +
-        (user.readability || 0) +
-        (user.visualimpact || 0)
-    }))
-    .filter(user => {
-      // Se o usuário não tem categoria, não mostra (categoria é obrigatória agora)
-      if (!user.category) return false;
-      
-      // Verifica se a categoria do usuário pertence ao dia atual
-      const userDay = categoryToDay[user.category];
-      if (!userDay || userDay !== diaAtual) return false;
-      
-      // Filtra por categoria se selecionada
+    .filter((user) => {
       if (categoriaSelecionada && user.category !== categoriaSelecionada) return false;
-      
       return true;
     })
     .sort((a, b) => b.totalScore - a.totalScore)
     .slice(0, 100);
 
-  // Categorias disponíveis para o dia atual (baseado no mapeamento + usuários do banco)
-  const categoriasDoDia = Object.keys(categoryToDay).filter(categoria => 
-    categoryToDay[categoria] === diaAtual
-  );
+  // Pega as categorias da votação atualmente selecionada
+  const categoriasDaVotacao = votacoes.find(v => v._id === selectedVotacaoId)?.categorias || [];
 
   return (
     <Box sx={{ margin: "3rem", marginTop: "6rem" }}>
       <Typography gutterBottom variant="h4">Top 100</Typography>
 
-      {/* Abas dos dias */}
+      {/* Abas para cada Votação */}
       <Tabs
-        value={tabIndex}
+        value={selectedVotacaoId}
         onChange={(_, newValue) => {
-          setTabIndex(newValue);
-          setCategoriaSelecionada(""); // reset categoria ao mudar de aba
+          setSelectedVotacaoId(newValue);
+          setCategoriaSelecionada(''); // Reseta o filtro de categoria ao mudar de aba
         }}
         sx={{ marginBottom: 2 }}
       >
-        {dias.map((dia, index) => (
-          <Tab key={dia} label={dia} />
+        {votacoes.map((votacao) => (
+          <Tab key={votacao._id} value={votacao._id} label={votacao.nome} />
         ))}
       </Tabs>
 
-      {/* Seleção de categoria */}
+      {/* Dropdown para filtrar por categoria */}
       <Box sx={{ marginBottom: 2 }}>
         <Typography>Filtrar por categoria:</Typography>
         <select
@@ -100,7 +101,7 @@ export default function Top100() {
           }}
         >
           <option value="">-- Todas --</option>
-          {categoriasDoDia.map((categoria) => (
+          {categoriasDaVotacao.map((categoria) => (
             <option key={categoria} value={categoria}>
               {categoria}
             </option>
@@ -109,8 +110,8 @@ export default function Top100() {
       </Box>
 
       <Grid container spacing={2}>
-        {sortedUsers.map((user, index) => (
-          <Grid key={index} item>
+        {sortedUsers.length > 0 ? sortedUsers.map((user, index) => (
+          <Grid key={user.id} item>
             <Paper sx={{
           flex: 1, 
           boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
@@ -191,7 +192,9 @@ export default function Top100() {
               </Box>
             </Paper>
           </Grid>
-        ))}
+        )) : (
+          <Typography sx={{ mt: 4, ml: 2 }}>Nenhum competidor encontrado para esta votação.</Typography>
+        )}
       </Grid>
     </Box>
   );
