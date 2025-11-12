@@ -13,16 +13,16 @@ export default async function handler(request: NextApiRequest, response: NextApi
       try {
         // Busca todos os competidores no MongoDB
         // const competidores = await Competidor.find({});
-        const { eventoId } = request.query;
+        const { votacaoId } = request.query;
 
-        const filter: { eventoId?: string } = {};
-        if (eventoId) {
-          filter.eventoId = eventoId as string;
+        const filter: { votacaoId?: string } = {};
+        if (votacaoId) {
+          filter.votacaoId = votacaoId as string;
         }
 
         // Busca competidores com base no filtro.
-        // O .populate('eventoId') substitui o ID do evento pelos dados completos do evento.
-        const competidores = await Competidor.find(filter).populate('eventoId');
+        // O .populate('votacaoId') substitui o ID do evento pelos dados completos do evento.
+        const competidores = await Competidor.find(filter).populate('votacaoId');
 
         return response.status(200).json(competidores);
       } catch (error) {
