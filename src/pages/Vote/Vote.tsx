@@ -31,8 +31,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
         readability: null,
         visualImpact: null,
         category: "",
-        // competidorId: "",
-        // juradoId: "",
     });
     const [votingUserId, setVotingUserId] = useState<string | null>(null);
     const [juradoId, setJuradoId] = useState<string>(""); // Estado para o ID do jurado
@@ -60,7 +58,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     }, [onOpenSnackBar]);
 
     const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
         const { name, value } = e.target;
         if (value === '') {
             setVoteValues(prevValues => ({ ...prevValues, [name]: 0 }));
@@ -70,7 +67,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
         // Converte o valor para número. Se o campo estiver vazio ou inválido, considera 0.
         let numValue = parseInt(value, 10);
         if (isNaN(numValue)) {
-            // numValue = 0;
             return;
         }
 
@@ -91,10 +87,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     const handleVote = async (userId: string) => {
         setVotingUserId(userId);
 
-        // if (!juradoId) {
-        //     onOpenSnackBar("Por favor, insira o ID do Jurado antes de votar.");
-        //     return;
-        // }
         try {
             setLoading(true);
             const payload = {
@@ -109,11 +101,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
             const response = await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // body: JSON.stringify({ 
-                //     ...voteValues, 
-                //     competidorId: userId, // ID do competidor que está recebendo o voto
-                //     juradoId: juradoId, // ID do jurado que está votando
-                // })
                 body: JSON.stringify({ ...payload, competidorId: userId })
             });
             if (!response.ok) {
@@ -160,17 +147,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 <Typography variant="h4" gutterBottom style={{ marginBottom: "6rem" }}>Vote Agora</Typography>
             </Grid>
 
-            {/* Campo para inserir o ID do Jurado */}
-            {/* <TextField
-                label="ID do Jurado"
-                value={juradoId}
-                onChange={(e) => setJuradoId(e.target.value)}
-                variant="outlined"
-                fullWidth
-                required
-                sx={{ marginBottom: '2rem', maxWidth: '500px' }}
-            /> */}
-
             <form style={{ width: "100%" }} onSubmit={(e) => { e.preventDefault(); }}>
                 <Grid container spacing={3} sx={{ width: "100%" }}>
                     {users.length > 0 ? (
@@ -210,7 +186,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Anatomia"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.anatomy ? Number(voteValues.anatomy) : 0}
                                     value={voteValues.anatomy}
                                     onChange={handleVoteChange}
                                     name="anatomy"
@@ -221,7 +196,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Criatividade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.creativity ? Number(voteValues.creativity) : 0}
                                     value={voteValues.creativity}
                                     onChange={handleVoteChange}
                                     name="creativity"
@@ -232,7 +206,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Pigmentação"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.pigmentation ? Number(voteValues.pigmentation) : 0}
                                     value={voteValues.pigmentation}
                                     onChange={handleVoteChange}
                                     name="pigmentation"
@@ -243,7 +216,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Traços"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.traces ? Number(voteValues.traces) : 0}
                                     value={voteValues.traces}
                                     onChange={handleVoteChange}
                                     name="traces"
@@ -254,7 +226,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Legibilidade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.readability ? Number(voteValues.readability) : 0}
                                     value={voteValues.readability}
                                     onChange={handleVoteChange}
                                     name="readability"
@@ -265,7 +236,6 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Impacto Visual"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    // value={voteValues.visualImpact ? Number(voteValues.visualImpact) : 0}
                                     value={voteValues.visualImpact}
                                     onChange={handleVoteChange}
                                     name="visualImpact"
