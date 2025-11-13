@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
 import { Button, Grid, LinearProgress, TextField, Typography } from "@mui/material";
 
+interface VoteValuesState {
+    anatomy: number | null;
+    creativity: number | null;
+    pigmentation: number | null;
+    traces: number | null;
+    readability: number | null;
+    visualImpact: number | null;
+    category: string;
+}
 interface VoteProps {
     onOpenSnackBar: (message: string) => void;
     users?: IUser[] | []; 
@@ -14,13 +23,13 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     // const [totalVotes, setTotalVotes] = useState(0);
     const [loading, setLoading] = useState<boolean>(false);
     const [users, setUsers] = useState<IUser[]>([]);
-    const [voteValues, setVoteValues] = useState({
-        anatomy: 0,
-        creativity: 0,
-        pigmentation: 0,
-        traces: 0,
-        readability: 0,
-        visualImpact: 0,
+    const [voteValues, setVoteValues] = useState<VoteValuesState>({
+        anatomy: null,
+        creativity: null,
+        pigmentation: null,
+        traces: null,
+        readability: null,
+        visualImpact: null,
         category: "",
         // competidorId: "",
         // juradoId: "",
@@ -53,11 +62,16 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
         const { name, value } = e.target;
+        if (value === '') {
+            setVoteValues(prevValues => ({ ...prevValues, [name]: 0 }));
+            return;
+        }
 
         // Converte o valor para número. Se o campo estiver vazio ou inválido, considera 0.
         let numValue = parseInt(value, 10);
         if (isNaN(numValue)) {
-            numValue = 0;
+            // numValue = 0;
+            return;
         }
 
         // Limita o valor entre 0 e 10.
@@ -77,20 +91,30 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     const handleVote = async (userId: string) => {
         setVotingUserId(userId);
 
-        if (!juradoId) {
-            onOpenSnackBar("Por favor, insira o ID do Jurado antes de votar.");
-            return;
-        }
+        // if (!juradoId) {
+        //     onOpenSnackBar("Por favor, insira o ID do Jurado antes de votar.");
+        //     return;
+        // }
         try {
             setLoading(true);
+            const payload = {
+                anatomy: voteValues.anatomy ?? 0,
+                creativity: voteValues.creativity ?? 0,
+                pigmentation: voteValues.pigmentation ?? 0,
+                traces: voteValues.traces ?? 0,
+                readability: voteValues.readability ?? 0,
+                visualImpact: voteValues.visualImpact ?? 0,
+            };
+
             const response = await fetch('/api/vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    ...voteValues, 
-                    competidorId: userId, // ID do competidor que está recebendo o voto
-                    juradoId: juradoId, // ID do jurado que está votando
-                })
+                // body: JSON.stringify({ 
+                //     ...voteValues, 
+                //     competidorId: userId, // ID do competidor que está recebendo o voto
+                //     juradoId: juradoId, // ID do jurado que está votando
+                // })
+                body: JSON.stringify({ ...payload, competidorId: userId })
             });
             if (!response.ok) {
                 throw new Error('Erro ao registrar voto');
