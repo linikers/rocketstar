@@ -1,9 +1,7 @@
 import dbConnect from "@/lib/mongodb";
-// import Competidor, { IVoto } from "@/models/Competidor"; // Importa o modelo Competidor e a interface IVoto
 import { NextApiRequest, NextApiResponse } from "next";
-import mongoose, { Types } from "mongoose"; // Importa mongoose para usar ObjectId
+// import mongoose, { Types } from "mongoose"; // Importa mongoose para usar ObjectId
 import Competidor, { IVoto } from "@/models/Competidor";
-// import Competidor, { IVoto } from "@/models/competidor";
 
 export default async function handlerVote(
   request: NextApiRequest,
@@ -17,7 +15,6 @@ export default async function handlerVote(
   try {
     const {
       competidorId,
-      // juradoId,
       anatomy, creativity, pigmentation,
       traces, readability, visualImpact
     } = request.body;
@@ -25,11 +22,6 @@ export default async function handlerVote(
     if (!competidorId) {
       return response.status(400).json({ error: "competidorId e juradoId são obrigatórios." });
     }
-
-      // Valida se o juradoId é um ObjectId válido do MongoDB
-      // if (!Types.ObjectId.isValid(juradoId)) {
-      //   return response.status(400).json({ error: "ID do jurado inválido." });
-      // }
 
     await dbConnect(); // Garante a conexão com o banco de dados
 
@@ -74,15 +66,8 @@ export default async function handlerVote(
             traces: { $sum: '$votos.traces' },
             readability: { $sum: '$votos.readability' },
             visualImpact: { $sum: '$votos.visualImpact' },
-        //   }
-        // },
-        // // Passo 4: Recalcula o placar total
-        // {
-        //   $set: {
             totalScore: {
               $add: [
-                // '$anatomy', '$creativity', '$pigmentation',
-                // '$traces', '$readability', '$visualImpact'
                 { $sum: '$votos.anatomy' }, { $sum: '$votos.creativity' },
                 { $sum: '$votos.pigmentation' }, { $sum: '$votos.traces' },
                 { $sum: '$votos.readability' }, { $sum: '$votos.visualImpact' }
