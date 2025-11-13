@@ -128,12 +128,12 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
             const newTotalScore = updatedUsers.reduce((acc, user) => acc + user.totalScore, 0);
             setTotalScoreSum(newTotalScore);
             setVoteValues({
-                anatomy: 0,
-                creativity: 0,
-                pigmentation: 0,
-                traces: 0,
-                readability: 0,
-                visualImpact: 0,
+                anatomy: null,
+                creativity: null,
+                pigmentation: null,
+                traces: null,
+                readability: null,
+                visualImpact: null,
                 category: '',
             });
             onOpenSnackBar("Voto registrado com sucesso");
@@ -160,8 +160,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 <Typography variant="h4" gutterBottom style={{ marginBottom: "6rem" }}>Vote Agora</Typography>
             </Grid>
 
-                        {/* Campo para inserir o ID do Jurado */}
-                        <TextField
+            {/* Campo para inserir o ID do Jurado */}
+            {/* <TextField
                 label="ID do Jurado"
                 value={juradoId}
                 onChange={(e) => setJuradoId(e.target.value)}
@@ -169,7 +169,7 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                 fullWidth
                 required
                 sx={{ marginBottom: '2rem', maxWidth: '500px' }}
-            />
+            /> */}
 
             <form style={{ width: "100%" }} onSubmit={(e) => { e.preventDefault(); }}>
                 <Grid container spacing={3} sx={{ width: "100%" }}>
