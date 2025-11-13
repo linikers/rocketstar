@@ -51,7 +51,27 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
     }, [onOpenSnackBar]);
 
     const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
+        // setVoteValues({ ...voteValues, [e.target.name]: parseInt(e.target.value, 10) });
+        const { name, value } = e.target;
+
+        // Converte o valor para número. Se o campo estiver vazio ou inválido, considera 0.
+        let numValue = parseInt(value, 10);
+        if (isNaN(numValue)) {
+            numValue = 0;
+        }
+
+        // Limita o valor entre 0 e 10.
+        if (numValue > 10) {
+            numValue = 10;
+        } else if (numValue < 0) {
+            numValue = 0;
+        }
+
+        setVoteValues(prevValues => ({
+            ...prevValues,
+            [name]: numValue,
+        }));
+
     };
  
     const handleVote = async (userId: string) => {
@@ -166,7 +186,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Anatomia"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.anatomy ? Number(voteValues.anatomy) : 0}
+                                    // value={voteValues.anatomy ? Number(voteValues.anatomy) : 0}
+                                    value={voteValues.anatomy}
                                     onChange={handleVoteChange}
                                     name="anatomy"
                                     style={{ marginBottom: "0.5rem" }}
@@ -176,7 +197,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Criatividade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.creativity ? Number(voteValues.creativity) : 0}
+                                    // value={voteValues.creativity ? Number(voteValues.creativity) : 0}
+                                    value={voteValues.creativity}
                                     onChange={handleVoteChange}
                                     name="creativity"
                                     style={{ marginBottom: "0.5rem" }}
@@ -186,7 +208,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Pigmentação"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.pigmentation ? Number(voteValues.pigmentation) : 0}
+                                    // value={voteValues.pigmentation ? Number(voteValues.pigmentation) : 0}
+                                    value={voteValues.pigmentation}
                                     onChange={handleVoteChange}
                                     name="pigmentation"
                                     style={{ marginBottom: "0.5rem" }}
@@ -196,7 +219,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Traços"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.traces ? Number(voteValues.traces) : 0}
+                                    // value={voteValues.traces ? Number(voteValues.traces) : 0}
+                                    value={voteValues.traces}
                                     onChange={handleVoteChange}
                                     name="traces"
                                     style={{ marginBottom: "0.5rem" }}
@@ -206,7 +230,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Legibilidade"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.readability ? Number(voteValues.readability) : 0}
+                                    // value={voteValues.readability ? Number(voteValues.readability) : 0}
+                                    value={voteValues.readability}
                                     onChange={handleVoteChange}
                                     name="readability"
                                     style={{ marginBottom: "0.5rem" }}
@@ -216,7 +241,8 @@ export default function Vote ({ onOpenSnackBar }: VoteProps) {
                                     label="Impacto Visual"
                                     type="number"
                                     inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.visualImpact ? Number(voteValues.visualImpact) : 0}
+                                    // value={voteValues.visualImpact ? Number(voteValues.visualImpact) : 0}
+                                    value={voteValues.visualImpact}
                                     onChange={handleVoteChange}
                                     name="visualImpact"
                                     style={{ marginBottom: "0.5rem" }}
