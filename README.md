@@ -33,14 +33,38 @@ Para que o sistema de votação esteja completo e atenda a todos os requisitos, 
     -   [ ] **APIs de Gerenciamento de Eventos:** Criar APIs para criar, listar e gerenciar os eventos de votação.
 
 2.  **Página Pública de Votação e QR Code:**
-    -   [ ] **Página de Votação:** Desenvolver uma página no frontend (`/votacao` ou similar) que:
-        -   Busque e exiba os `Eventos` ativos para o dia atual.
-        -   Liste as categorias e os competidores associados a esses eventos.
-        -   Permita que os usuários visualizem os competidores e registrem seus votos (interagindo com a API `/api/vote`).
-    -   [ ] **Geração de QR Code:** Implementar a funcionalidade para gerar um QR Code que direcione os votantes para a página de votação do dia.
-    -   [ ] **Controle de Voto por Jurado/Dispositivo:** Implementar a lógica para garantir que um jurado (ou dispositivo) vote apenas uma vez por competidor/categoria, conforme o requisito.
-3.  **Visualização de Resultados:**
-    -   [ ] Criar uma página ou seção para exibir os resultados das votações em tempo real ou após o encerramento, possivelmente com gráficos e rankings.
+    Crie a especificação técnica de uma tela de votação com as seguintes características:
+        CRIAÇÃO DE PÁGINA:
+        - uma nova página  que mostra o qrcode
+        - na pagina "/admin" opção para gerar a quantidade x de qr codes 
+
+        AUTENTICAÇÃO:
+        - URL contém token JWT no formato: /vote/{votingSessionId}/{jwtToken}
+        - Token deve conter: votingSessionId, expirationTimestamp, nonce único
+        - Backend valida token antes de renderizar tela
+        - Se token inválido/expirado: mostrar mensagem de erro
+        - Se token já utilizado: mostrar "voto já computado"
+
+        FLUXO:
+        1. Usuário escaneia QR code
+        2. Sistema valida token automaticamente
+        3. Se válido, carrega opções de votação da sessão
+        4. Usuário seleciona opção
+        5. Sistema marca token como usado no banco
+        6. Confirmação visual e impossibilidade de revotar
+
+        SEGURANÇA:
+        - Token expira em 72 horas
+        - Após uso, token vai para lista negra
+        - Rate limiting por IP (máx 5 requisições/minuto)
+        - CORS restrito ao domínio oficial
+        - Validação server-side obrigatória
+
+        DADOS NECESSÁRIOS:
+        - Endpoint GET /api/vote/:sessionId/:token (retorna opções)
+        - Endpoint POST /api/vote/:sessionId/:token (envia voto)
+        - Response deve incluir apenas: opções disponíveis, título da votação
+        - Não retornar informações do token no response
 
 ## Como Iniciar
 
