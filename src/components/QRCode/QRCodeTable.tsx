@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -19,9 +19,11 @@ import {
 import {
   Visibility as VisibilityIcon,
   ContentCopy as ContentCopyIcon,
+  Share as ShareIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
 import StatusBadge from "./StatusBadge";
-import QRCodeDisplay from "./QRcodeDisplay";
+import QRCodeDisplay, { QRCodeDisplayRef } from "./QRcodeDisplay";
 import { IQRCodeAuth } from "@/models/QRCodeAuth";
 
 interface QRCodeTableProps {
@@ -31,6 +33,7 @@ interface QRCodeTableProps {
 export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const qrDisplayRef = useRef<QRCodeDisplayRef>(null);
 
   const handleOpenDialog = (code: string) => {
     setSelectedQR(code);
@@ -42,9 +45,49 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
     setSelectedQR(null);
   };
 
+  const getAuthUrl = (code: string) => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/auth/qrcode?code=${code}`;
+    }
+    return "";
+  };
+
+  const handleCopyUrl = (code: string) => {
+    const url = getAuthUrl(code);
+    navigator.clipboard.writeText(url);
+    alert("Link copiado para a área de transferência!");
+  };
+
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     alert("Código copiado!");
+  };
+
+  const handleShare = async (code: string) => {
+    const url = getAuthUrl(code);
+
+    // Tenta usar Web Share API (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "QR Code de Autenticação",
+          text: "Use este link para autenticação:",
+          url: url,
+        });
+      } catch (error) {
+        // Usuário cancelou ou erro
+        console.log("Compartilhamento cancelado");
+      }
+    } else {
+      // Fallback: copia o link
+      handleCopyUrl(code);
+    }
+  };
+
+  const handleDownload = () => {
+    if (qrDisplayRef.current) {
+      qrDisplayRef.current.downloadQRCode();
+    }
   };
 
   const formatDate = (date: Date) => {
@@ -93,21 +136,29 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
                     {qr.usedAt ? formatDate(qr.usedAt) : "-"}
                   </TableCell>
                   <TableCell align="center">
-                    <Box display="flex" gap={1} justifyContent="center">
+                    <Box display="flex" gap={0.5} justifyContent="center">
                       <Tooltip title="Visualizar QR Code">
                         <IconButton
                           size="small"
                           onClick={() => handleOpenDialog(qr.code)}
                         >
-                          <VisibilityIcon />
+                          <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Copiar código">
+                      <Tooltip title="Compartilhar link">
                         <IconButton
                           size="small"
-                          onClick={() => handleCopyCode(qr.code)}
+                          onClick={() => handleShare(qr.code)}
                         >
-                          <ContentCopyIcon />
+                          <ShareIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Copiar link">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleCopyUrl(qr.code)}
+                        >
+                          <ContentCopyIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
@@ -126,15 +177,29 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>QR Code</DialogTitle>
+        <DialogTitle>QR Code de Autenticação</DialogTitle>
         <DialogContent>
           <Box display="flex" justifyContent="center" py={2}>
-            {selectedQR && <QRCodeDisplay code={selectedQR} size={300} />}
+            {selectedQR && (
+              <QRCodeDisplay ref={qrDisplayRef} code={selectedQR} size={300} />
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => selectedQR && handleCopyCode(selectedQR)}>
-            Copiar Código
+          <Button startIcon={<DownloadIcon />} onClick={handleDownload}>
+            Baixar QR
+          </Button>
+          <Button
+            startIcon={<ShareIcon />}
+            onClick={() => selectedQR && handleShare(selectedQR)}
+          >
+            Compartilhar
+          </Button>
+          <Button
+            startIcon={<ContentCopyIcon />}
+            onClick={() => selectedQR && handleCopyUrl(selectedQR)}
+          >
+            Copiar Link
           </Button>
           <Button onClick={handleCloseDialog} variant="contained">
             Fechar
