@@ -18,13 +18,17 @@
     "mongoose": "^8.19.2",
     "next": "14.2.5",
     "prop-types": "^15.8.1",
+    "qrcode": "^1.5.4",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/uuid": "^11.0.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "typescript": "^5"
