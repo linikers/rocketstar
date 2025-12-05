@@ -1,12 +1,12 @@
 import { IVotacao } from "@/models/Votacao";
 import { Button, Grid, Box, Container, Card, CardContent } from "@mui/material";
 import React, { FormEvent, useEffect, useState } from "react";
-import PageHeader from "./components/PageHeader";
-import ProgressStepper from "./components/ProgressStepper";
-import PersonalDataForm from "./components/PersonalDataForm";
-import VotingSelector from "./components/VotingSelector";
-import CategorySelector from "./components/CategorySelector";
-import RegistrationSummary from "./components/RegistrationSummary";
+import PageHeader from "@/components/Register/PageHeader";
+import ProgressStepper from "@/components/Register/ProgressStepper";
+import PersonalDataForm from "@/components/Register/PersonalDataForm";
+import VotingSelector from "@/components/Register/VotingSelector";
+import CategorySelector from "@/components/Register/CategorySelector";
+import RegistrationSummary from "@/components/Register/RegistrationSummary";
 
 export interface IUser {
   id: string;

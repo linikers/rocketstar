@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
 import { Box, Grid, Typography, Container } from "@mui/material";
-import PageHeader from "./components/PageHeader";
-import CompetitorCard from "./components/CompetitorCard";
+import PageHeader from "@/components/Vote/PageHeader";
+import CompetitorCard from "@/components/Vote/CompetitorCard";
 
 interface VoteValuesState {
   anatomy: number;

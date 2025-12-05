@@ -2,10 +2,14 @@ import { useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
 import { Box, Grid, Typography, Container } from "@mui/material";
 import { IVotacao } from "@/models/Votacao";
-import PageHeader from "./components/PageHeader";
-import VotingTabs from "./components/VotingTabs";
-import CategoryFilter from "./components/CategoryFilter";
-import RankingCard from "./components/RankingCard";
+// import PageHeader from "@/components/Top100/PageHeader";
+// import VotingTabs from "@/components/Top100/VotingTabs";
+// import CategoryFilter from "@/components/Top100/CategoryFilter";
+// import RankingCard from "@/components/Top100/RankingCard";
+import PageHeader from "@/components/Register/PageHeader";
+import VotingTabs from "@/components/Top100/components/VotingTabs";
+import CategoryFilter from "@/components/Top100/components/CategoryFilter";
+import RankingCard from "@/components/Top100/components/RankingCard";
 
 export default function Top100() {
   const [loading, setLoading] = useState<boolean>(false);
