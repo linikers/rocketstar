@@ -6,10 +6,11 @@ import { IVotacao } from "@/models/Votacao";
 // import VotingTabs from "@/components/Top100/VotingTabs";
 // import CategoryFilter from "@/components/Top100/CategoryFilter";
 // import RankingCard from "@/components/Top100/RankingCard";
-import PageHeader from "@/components/Register/PageHeader";
+// import PageHeader from "@/components/Register/PageHeader";
 import VotingTabs from "@/components/Top100/components/VotingTabs";
 import CategoryFilter from "@/components/Top100/components/CategoryFilter";
 import RankingCard from "@/components/Top100/components/RankingCard";
+import PageHeader from "@/components/Top100/components/PageHeader";
 
 export default function Top100() {
   const [loading, setLoading] = useState<boolean>(false);
