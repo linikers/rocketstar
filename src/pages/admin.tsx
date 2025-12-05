@@ -5,23 +5,35 @@ import {
   Container,
   Grid,
   IconButton,
-  List,
-  ListItem,
-  ListItemText,
   TextField,
   Typography,
-  Divider,
   Box,
+  Card,
+  CardContent,
+  CardActions,
+  Chip,
+  Stack,
+  Paper,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
+import {
+  Delete as DeleteIcon,
+  QrCode2 as QrCodeIcon,
+  Event as EventIcon,
+} from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
 
 export default function AdminVotacaoPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [votacoes, setVotacoes] = useState<IVotacao[]>([]);
   const [formState, setFormState] = useState({
     nome: "",
-    data: new Date().toISOString().split("T")[0], // Padrão para hoje
-    categorias: "", // Usaremos uma string separada por vírgulas
+    data: new Date().toISOString().split("T")[0],
+    categorias: "",
   });
 
   // Estados para QR Codes
@@ -66,7 +78,6 @@ export default function AdminVotacaoPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // Converte a string de categorias em um array, removendo espaços em branco
     const categoriasArray = formState.categorias
       .split(",")
       .map((cat) => cat.trim())
@@ -93,7 +104,6 @@ export default function AdminVotacaoPage() {
         throw new Error("Falha ao criar votação");
       }
 
-      // Limpa o formulário e atualiza a lista
       setFormState({
         nome: "",
         data: new Date().toISOString().split("T")[0],
@@ -116,7 +126,7 @@ export default function AdminVotacaoPage() {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Falha ao deletar");
-      fetchVotacoes(); // Atualiza a lista
+      fetchVotacoes();
       alert("Votação deletada com sucesso.");
     } catch (error) {
       alert("Erro ao deletar votação.");
@@ -141,7 +151,7 @@ export default function AdminVotacaoPage() {
 
       if (result.success) {
         alert("QR Code gerado com sucesso!");
-        fetchQRCodes(); // Atualiza a lista
+        fetchQRCodes();
       } else {
         alert("Erro ao gerar QR Code.");
       }
@@ -154,123 +164,371 @@ export default function AdminVotacaoPage() {
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>
-        Gerenciar Votações
-      </Typography>
-
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <Typography variant="h6">Criar Nova Votação</Typography>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              name="nome"
-              label="Nome da Votação (ex: Votação de Sexta)"
-              value={formState.nome}
-              onChange={handleInputChange}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              name="data"
-              label="Data"
-              type="date"
-              value={formState.data}
-              onChange={handleInputChange}
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              name="categorias"
-              label="Categorias (separadas por vírgula)"
-              placeholder="Ex: Realismo, Old School, Aquarela"
-              value={formState.categorias}
-              onChange={handleInputChange}
-              fullWidth
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Button type="submit" variant="contained" color="primary">
-              Criar Votação
-            </Button>
-          </Grid>
-        </Grid>
-      </form>
-
-      <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>
-        Votações Existentes
-      </Typography>
-      <List>
-        {votacoes.map((votacao) => (
-          <ListItem
-            key={votacao._id}
-            divider
-            secondaryAction={
-              <IconButton
-                edge="end"
-                aria-label="delete"
-                onClick={() => handleDelete(votacao._id)}
-              >
-                <Typography color="error">X</Typography>
-              </IconButton>
-            }
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+        py: { xs: 3, md: 6 },
+      }}
+    >
+      <Container maxWidth="lg">
+        {/* Header */}
+        <Box sx={{ mb: 6, textAlign: "center" }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              background: "linear-gradient(45deg, #B8F3FF 30%, #8AC6D0 90%)",
+              backgroundClip: "text",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              mb: 1,
+              fontSize: { xs: "2rem", md: "3rem" },
+            }}
           >
-            <ListItemText
-              primary={votacao.nome}
-              secondary={`Categorias: ${votacao.categorias.join(", ")}`}
-            />
-          </ListItem>
-        ))}
-      </List>
+            Painel Administrativo
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#B8F3FF", opacity: 0.8 }}>
+            Gerencie votações e QR codes de autenticação
+          </Typography>
+        </Box>
 
-      {/* Seção de QR Codes */}
-      <Divider sx={{ my: 6 }} />
-
-      <Typography variant="h4" gutterBottom>
-        Gerenciar QR Codes de Autenticação
-      </Typography>
-
-      <Box sx={{ mt: 3, mb: 4 }}>
-        <Typography variant="h6" gutterBottom>
-          Gerar Novo QR Code
-        </Typography>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6}>
-            <TextField
-              label="Validade (horas)"
-              type="number"
-              value={validityHours}
-              onChange={(e) => setValidityHours(Number(e.target.value))}
-              fullWidth
-              inputProps={{ min: 1 }}
-              helperText="Padrão: 72 horas (3 dias)"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleGenerateQRCode}
-              disabled={loadingQR}
-              fullWidth
+        {/* Seção de Votações */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 2, md: 4 },
+            mb: 4,
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(184, 243, 255, 0.1)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <EventIcon sx={{ color: "#B8F3FF", mr: 1, fontSize: 32 }} />
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: "#B8F3FF",
+              }}
             >
-              {loadingQR ? "Gerando..." : "Gerar QR Code"}
-            </Button>
-          </Grid>
-        </Grid>
-      </Box>
+              Gerenciar Votações
+            </Typography>
+          </Box>
 
-      <Typography variant="h6" gutterBottom>
-        QR Codes Gerados
-      </Typography>
-      <QRCodeTable qrCodes={qrCodes} />
-    </Container>
+          {/* Formulário de Criação */}
+          <Card
+            sx={{
+              mb: 4,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 2,
+              border: "1px solid rgba(184, 243, 255, 0.1)",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ mb: 3, color: "#8AC6D0", fontWeight: 500 }}
+              >
+                Criar Nova Votação
+              </Typography>
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      name="nome"
+                      label="Nome da Votação"
+                      placeholder="Ex: Votação de Sexta"
+                      value={formState.nome}
+                      onChange={handleInputChange}
+                      fullWidth
+                      required
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "#B8F3FF",
+                          "& fieldset": {
+                            borderColor: "rgba(184, 243, 255, 0.3)",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8AC6D0",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#B8F3FF",
+                          },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "#8AC6D0",
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      name="data"
+                      label="Data"
+                      type="date"
+                      value={formState.data}
+                      onChange={handleInputChange}
+                      fullWidth
+                      InputLabelProps={{ shrink: true }}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "#B8F3FF",
+                          "& fieldset": {
+                            borderColor: "rgba(184, 243, 255, 0.3)",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8AC6D0",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#B8F3FF",
+                          },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "#8AC6D0",
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      name="categorias"
+                      label="Categorias (separadas por vírgula)"
+                      placeholder="Ex: Realismo, Old School, Aquarela"
+                      value={formState.categorias}
+                      onChange={handleInputChange}
+                      fullWidth
+                      required
+                      multiline
+                      rows={2}
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "#B8F3FF",
+                          "& fieldset": {
+                            borderColor: "rgba(184, 243, 255, 0.3)",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "#8AC6D0",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#B8F3FF",
+                          },
+                        },
+                        "& .MuiInputLabel-root": {
+                          color: "#8AC6D0",
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      fullWidth={isMobile}
+                      sx={{
+                        minWidth: isMobile ? "100%" : 200,
+                      }}
+                    >
+                      Criar Votação
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Lista de Votações */}
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, color: "#8AC6D0", fontWeight: 500 }}
+          >
+            Votações Existentes
+          </Typography>
+          <Grid container spacing={2}>
+            {votacoes.length === 0 ? (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 4,
+                    color: "#8AC6D0",
+                    opacity: 0.6,
+                  }}
+                >
+                  Nenhuma votação criada ainda
+                </Box>
+              </Grid>
+            ) : (
+              votacoes.map((votacao) => (
+                <Grid item xs={12} md={6} key={votacao._id}>
+                  <Card
+                    sx={{
+                      background: "rgba(255, 255, 255, 0.03)",
+                      borderRadius: 2,
+                      border: "1px solid rgba(184, 243, 255, 0.1)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 8px 24px rgba(184, 243, 255, 0.15)",
+                        border: "1px solid rgba(184, 243, 255, 0.3)",
+                      },
+                    }}
+                  >
+                    <CardContent>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "#B8F3FF",
+                          fontWeight: 600,
+                          mb: 1,
+                        }}
+                      >
+                        {votacao.nome}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        gap={1}
+                      >
+                        {votacao.categorias.map((cat, idx) => (
+                          <Chip
+                            key={idx}
+                            label={cat}
+                            size="small"
+                            sx={{
+                              background: "rgba(138, 198, 208, 0.2)",
+                              color: "#8AC6D0",
+                              border: "1px solid rgba(138, 198, 208, 0.3)",
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    </CardContent>
+                    <CardActions
+                      sx={{ justifyContent: "flex-end", px: 2, pb: 2 }}
+                    >
+                      <IconButton
+                        onClick={() => handleDelete(votacao._id)}
+                        sx={{
+                          color: "#f44336",
+                          "&:hover": {
+                            background: "rgba(244, 67, 54, 0.1)",
+                          },
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))
+            )}
+          </Grid>
+        </Paper>
+
+        {/* Seção de QR Codes */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 2, md: 4 },
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(184, 243, 255, 0.1)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <QrCodeIcon sx={{ color: "#B8F3FF", mr: 1, fontSize: 32 }} />
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: "#B8F3FF",
+              }}
+            >
+              QR Codes de Autenticação
+            </Typography>
+          </Box>
+
+          {/* Formulário de Geração de QR */}
+          <Card
+            sx={{
+              mb: 4,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 2,
+              border: "1px solid rgba(184, 243, 255, 0.1)",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ mb: 3, color: "#8AC6D0", fontWeight: 500 }}
+              >
+                Gerar Novo QR Code
+              </Typography>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Validade (horas)"
+                    type="number"
+                    value={validityHours}
+                    onChange={(e) => setValidityHours(Number(e.target.value))}
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    helperText="Padrão: 72 horas (3 dias)"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        color: "#B8F3FF",
+                        "& fieldset": {
+                          borderColor: "rgba(184, 243, 255, 0.3)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#8AC6D0",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#B8F3FF",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "#8AC6D0",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#8AC6D0",
+                        opacity: 0.7,
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Button
+                    variant="contained"
+                    onClick={handleGenerateQRCode}
+                    disabled={loadingQR}
+                    fullWidth
+                    size="large"
+                    startIcon={<QrCodeIcon />}
+                  >
+                    {loadingQR ? "Gerando..." : "Gerar QR Code"}
+                  </Button>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          {/* Tabela de QR Codes */}
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, color: "#8AC6D0", fontWeight: 500 }}
+          >
+            QR Codes Gerados
+          </Typography>
+          <QRCodeTable qrCodes={qrCodes} />
+        </Paper>
+      </Container>
+    </Box>
   );
 }
