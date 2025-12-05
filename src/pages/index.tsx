@@ -106,14 +106,14 @@ function App() {
                     fontSize: { xs: "2rem", md: "3rem" },
                   }}
                 >
-                  RocketStars
+                  Otttakucon
                 </Typography>
               </Box>
               <Typography
                 variant="body1"
                 sx={{ color: "#8AC6D0", opacity: 0.9 }}
               >
-                Otttakucon - Votação e Ranking de Competidores
+                RocketStars - Votação e Ranking de Competidores
               </Typography>
             </Box>
 
