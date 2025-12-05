@@ -113,7 +113,7 @@ function App() {
                 variant="body1"
                 sx={{ color: "#8AC6D0", opacity: 0.9 }}
               >
-                RocketStar - Votação e Ranking de Competidores
+                Otttakucon - Votação e Ranking de Competidores
               </Typography>
             </Box>
 
@@ -202,70 +202,146 @@ function App() {
           </Container>
         </Box>
       ) : (
-        <Grid
-          container
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            margin: "1rem",
-            width: "100%",
-            boxSizing: "border-box",
+        <Box
+          sx={{
+            minHeight: "100vh",
+            background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
           }}
         >
-          <Grid item style={{ width: "100%", maxWidth: "1200px" }}>
-            <Header onClick={handleNavigateAnimation} />
-          </Grid>
           <Grid
-            item
+            container
             style={{
               display: "flex",
-              flexWrap: "wrap",
+              flexDirection: "column",
               alignItems: "center",
-              justifyContent: "center",
               width: "100%",
+              boxSizing: "border-box",
             }}
           >
-            <Button
-              color="secondary"
-              onClick={handleNavigateVote}
-              sx={{ margin: "4px" }}
+            <Grid
+              item
+              style={{ width: "100%", maxWidth: "1200px", padding: "1rem" }}
             >
-              Vote Agora
-            </Button>
-            <Button
-              color="secondary"
-              onClick={handleNavigateRegister}
-              sx={{ margin: "4px" }}
+              <Header onClick={handleNavigateAnimation} />
+            </Grid>
+
+            {/* Navigation Tabs */}
+            <Grid
+              item
+              style={{ width: "100%", maxWidth: "1200px", padding: "0 1rem" }}
             >
-              Registre o participante
-            </Button>
-            <Button
-              color="secondary"
-              onClick={handleNavigateTop10}
-              sx={{ margin: "4px" }}
+              <Box
+                sx={{
+                  mb: 4,
+                  borderRadius: 2,
+                  background: "rgba(255, 255, 255, 0.05)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(184, 243, 255, 0.1)",
+                  p: 2,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  justifyContent: "center",
+                }}
+              >
+                <Button
+                  onClick={handleNavigateVote}
+                  variant={currentPage === "vote" ? "contained" : "outlined"}
+                  startIcon={<VoteIcon />}
+                  sx={{
+                    color: currentPage === "vote" ? "#36213E" : "#8AC6D0",
+                    borderColor: "rgba(184, 243, 255, 0.3)",
+                    background:
+                      currentPage === "vote"
+                        ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                        : "transparent",
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "#8AC6D0",
+                      background:
+                        currentPage === "vote"
+                          ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                          : "rgba(138, 198, 208, 0.1)",
+                    },
+                  }}
+                >
+                  Vote Agora
+                </Button>
+                <Button
+                  onClick={handleNavigateRegister}
+                  variant={
+                    currentPage === "register" ? "contained" : "outlined"
+                  }
+                  startIcon={<RegisterIcon />}
+                  sx={{
+                    color: currentPage === "register" ? "#36213E" : "#8AC6D0",
+                    borderColor: "rgba(184, 243, 255, 0.3)",
+                    background:
+                      currentPage === "register"
+                        ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                        : "transparent",
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "#8AC6D0",
+                      background:
+                        currentPage === "register"
+                          ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                          : "rgba(138, 198, 208, 0.1)",
+                    },
+                  }}
+                >
+                  Registrar Participante
+                </Button>
+                <Button
+                  onClick={handleNavigateTop10}
+                  variant={currentPage === "top10" ? "contained" : "outlined"}
+                  startIcon={<TrophyIcon />}
+                  sx={{
+                    color: currentPage === "top10" ? "#36213E" : "#8AC6D0",
+                    borderColor: "rgba(184, 243, 255, 0.3)",
+                    background:
+                      currentPage === "top10"
+                        ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                        : "transparent",
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "#8AC6D0",
+                      background:
+                        currentPage === "top10"
+                          ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
+                          : "rgba(138, 198, 208, 0.1)",
+                    },
+                  }}
+                >
+                  Classificação Geral
+                </Button>
+              </Box>
+            </Grid>
+            <Grid
+              item
+              xs={12}
+              style={{ display: "flex", justifyContent: "center" }}
             >
-              Classificação Geral
-            </Button>
+              {currentPage === "vote" && (
+                <Vote
+                  onOpenSnackBar={handleOpenSnackBar}
+                  users={users}
+                  setUsers={setUsers}
+                />
+              )}
+              {currentPage === "register" && (
+                <Register onRegister={handleNavigateVote} />
+              )}
+              {currentPage === "top10" && <Top100 />}
+            </Grid>
           </Grid>
-          <Grid
-            item
-            xs={12}
-            style={{ display: "flex", justifyContent: "center" }}
-          >
-            {currentPage === "vote" && (
-              <Vote
-                onOpenSnackBar={handleOpenSnackBar}
-                users={users}
-                setUsers={setUsers}
-              />
-            )}
-            {currentPage === "register" && (
-              <Register onRegister={handleNavigateVote} />
-            )}
-            {currentPage === "top10" && <Top100 />}
-          </Grid>
-        </Grid>
+        </Box>
       )}
       <SnackBarCustom message={snackBarMessage} severity="success" />
     </>
