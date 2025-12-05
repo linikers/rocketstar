@@ -106,7 +106,7 @@ function App() {
                     fontSize: { xs: "2rem", md: "3rem" },
                   }}
                 >
-                  RocketStar
+                  RocketStars
                 </Typography>
               </Box>
               <Typography
