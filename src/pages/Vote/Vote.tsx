@@ -1,291 +1,187 @@
 import { useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
-import { Button, Grid, LinearProgress, TextField, Typography } from "@mui/material";
+import { Box, Grid, Typography, Container } from "@mui/material";
+import PageHeader from "./components/PageHeader";
+import CompetitorCard from "./components/CompetitorCard";
 
 interface VoteValuesState {
-    anatomy: number | null;
-    creativity: number | null;
-    pigmentation: number | null;
-    traces: number | null;
-    readability: number | null;
-    visualImpact: number | null;
-    category: string;
+  anatomy: number;
+  creativity: number;
+  pigmentation: number;
+  traces: number;
+  readability: number;
+  visualImpact: number;
+  category: string;
 }
+
 interface VoteProps {
-    onOpenSnackBar: (message: string) => void;
-    users?: IUser[] | []; 
-    setUsers?: (users: IUser[]) => void;
+  onOpenSnackBar: (message: string) => void;
+  users?: IUser[] | [];
+  setUsers?: (users: IUser[]) => void;
 }
 
-export default function Vote ({ onOpenSnackBar }: VoteProps) {
-    // const [totalVotes, setTotalVotes] = useState(0);
-    const [totalScoreSum, setTotalScoreSum] = useState(0);
-    // const [totalVotes, setTotalVotes] = useState(0);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [users, setUsers] = useState<IUser[]>([]);
-    const [voteValues, setVoteValues] = useState<VoteValuesState>({
-        anatomy: null,
-        creativity: null,
-        pigmentation: null,
-        traces: null,
-        readability: null,
-        visualImpact: null,
+export default function Vote({ onOpenSnackBar }: VoteProps) {
+  const [totalScoreSum, setTotalScoreSum] = useState(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [users, setUsers] = useState<IUser[]>([]);
+  const [voteValues, setVoteValues] = useState<VoteValuesState>({
+    anatomy: 5,
+    creativity: 5,
+    pigmentation: 5,
+    traces: 5,
+    readability: 5,
+    visualImpact: 5,
+    category: "",
+  });
+  const [votingUserId, setVotingUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/list");
+        if (!response.ok) {
+          throw new Error("Erro ao listar competidores");
+        }
+        const data = await response.json();
+        setUsers(data);
+        const total = data.reduce(
+          (acc: number, user: { totalScore: number }) => acc + user.totalScore,
+          0
+        );
+        setTotalScoreSum(total);
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+        onOpenSnackBar("Erro ao listar competidores");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [onOpenSnackBar]);
+
+  const handleSliderChange =
+    (name: string) => (event: Event, value: number | number[]) => {
+      setVoteValues((prevValues) => ({
+        ...prevValues,
+        [name]: value as number,
+      }));
+    };
+
+  const handleVote = async (userId: string) => {
+    setVotingUserId(userId);
+
+    try {
+      setLoading(true);
+      const payload = {
+        anatomy: voteValues.anatomy,
+        creativity: voteValues.creativity,
+        pigmentation: voteValues.pigmentation,
+        traces: voteValues.traces,
+        readability: voteValues.readability,
+        visualImpact: voteValues.visualImpact,
+      };
+
+      const response = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, competidorId: userId }),
+      });
+      if (!response.ok) {
+        throw new Error("Erro ao registrar voto");
+      }
+      const updatedUser = await response.json();
+      const updatedUsers = users.map((user: any) =>
+        user._id === updatedUser._id ? { ...user, ...updatedUser } : user
+      );
+
+      setUsers(updatedUsers);
+      const newTotalScore = updatedUsers.reduce(
+        (acc, user) => acc + user.totalScore,
+        0
+      );
+      setTotalScoreSum(newTotalScore);
+
+      // Reset para valores médios
+      setVoteValues({
+        anatomy: 5,
+        creativity: 5,
+        pigmentation: 5,
+        traces: 5,
+        readability: 5,
+        visualImpact: 5,
         category: "",
-    });
-    const [votingUserId, setVotingUserId] = useState<string | null>(null);
-    const [juradoId, setJuradoId] = useState<string>(""); // Estado para o ID do jurado
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                setLoading(true);
-                const response = await fetch('/api/list');
-                if (!response.ok) {
-                    throw new Error('Erro ao listar competidores');
-                }
-                const data = await response.json();
-                setUsers(data);
-                const total = data.reduce((acc: number, user: { totalScore: number }) => acc + user.totalScore, 0);
-                setTotalScoreSum(total);
-            } catch (error) {
-                console.error('Erro ao buscar dados:', error);
-                onOpenSnackBar("Erro ao listar competidores");
-            } finally {
-                setLoading(false);
-            }
-        };
+      });
+      onOpenSnackBar("Voto registrado com sucesso! 🎉");
+    } catch (error) {
+      console.error("Erro ao votar:", error);
+      onOpenSnackBar("Erro ao registrar voto");
+    } finally {
+      setLoading(false);
+      setVotingUserId(null);
+    }
+  };
 
-        fetchUsers();
-    }, [onOpenSnackBar]);
-
-    const handleVoteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        if (value === '') {
-            setVoteValues(prevValues => ({ ...prevValues, [name]: 0 }));
-            return;
-        }
-
-        // Converte o valor para número. Se o campo estiver vazio ou inválido, considera 0.
-        let numValue = parseInt(value, 10);
-        if (isNaN(numValue)) {
-            return;
-        }
-
-        // Limita o valor entre 0 e 10.
-        if (numValue > 10) {
-            numValue = 10;
-        } else if (numValue < 0) {
-            numValue = 0;
-        }
-
-        setVoteValues(prevValues => ({
-            ...prevValues,
-            [name]: numValue,
-        }));
-
-    };
- 
-    const handleVote = async (userId: string) => {
-        setVotingUserId(userId);
-
-        try {
-            setLoading(true);
-            const payload = {
-                anatomy: voteValues.anatomy ?? 0,
-                creativity: voteValues.creativity ?? 0,
-                pigmentation: voteValues.pigmentation ?? 0,
-                traces: voteValues.traces ?? 0,
-                readability: voteValues.readability ?? 0,
-                visualImpact: voteValues.visualImpact ?? 0,
-            };
-
-            const response = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...payload, competidorId: userId })
-            });
-            if (!response.ok) {
-                throw new Error('Erro ao registrar voto');
-            }
-            const updatedUser = await response.json();
-            const updatedUsers = users.map(
-                (user: any) => user._id === updatedUser._id ? { ...user, ...updatedUser } : user
-            );
-
-            setUsers(updatedUsers);
-            const newTotalScore = updatedUsers.reduce((acc, user) => acc + user.totalScore, 0);
-            setTotalScoreSum(newTotalScore);
-            setVoteValues({
-                anatomy: null,
-                creativity: null,
-                pigmentation: null,
-                traces: null,
-                readability: null,
-                visualImpact: null,
-                category: '',
-            });
-            onOpenSnackBar("Voto registrado com sucesso");
-        } catch (error) {
-            console.error('Erro ao votar:', error);
-            onOpenSnackBar("Erro ao registrar voto");
-        } finally {
-            setLoading(false);
-            setVotingUserId(null);
-        }
-    };
-    if(loading) return <Typography>Carregando...</Typography>
+  if (loading && users.length === 0)
     return (
-        <Grid container
-            sx={{
-                margin: "2rem",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                minWidth: "320px",
-            }}
-        >
-            <Grid item>
-                <Typography variant="h4" gutterBottom style={{ marginBottom: "6rem" }}>Vote Agora</Typography>
-            </Grid>
-
-            <form style={{ width: "100%" }} onSubmit={(e) => { e.preventDefault(); }}>
-                <Grid container spacing={3} sx={{ width: "100%" }}>
-                    {users.length > 0 ? (
-                        users.map((user: any) => (
-                            <Grid
-                                key={(user as any)._id}
-                                xs={12} item
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    justifyContent: "center",
-                                    backgroundColor: "#FB607F",
-                                    padding: "1rem",
-                                    borderRadius: "8px",
-                                    marginBottom: "1rem",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.4)",
-                                    transition: "transform 0.3s, box-shadow 0.3s",
-                                    minWidth: "320px",
-                                    "&:hover": {
-                                        transform: "scale(1.02)",
-                                        boxShadow: "0 16px rgba(0,0,0, 0.2)",
-                                    }
-                                }}
-                            >
-                                <Typography
-                                    style={{ fontWeight: "bold", color: "#FFC0CB" }}
-                                >
-                                    {user.name}
-                                </Typography>
-                                <Typography
-                                    style={{ color: "#FB607F" }}
-                                >
-                                    {user.work}
-                                </Typography>
-
-                                <TextField
-                                    label="Anatomia"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.anatomy}
-                                    onChange={handleVoteChange}
-                                    name="anatomy"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-                                <TextField
-                                    label="Criatividade"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.creativity}
-                                    onChange={handleVoteChange}
-                                    name="creativity"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-                                <TextField
-                                    label="Pigmentação"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.pigmentation}
-                                    onChange={handleVoteChange}
-                                    name="pigmentation"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-                                <TextField
-                                    label="Traços"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.traces}
-                                    onChange={handleVoteChange}
-                                    name="traces"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-                                <TextField
-                                    label="Legibilidade"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.readability}
-                                    onChange={handleVoteChange}
-                                    name="readability"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-                                <TextField
-                                    label="Impacto Visual"
-                                    type="number"
-                                    inputProps={{ min: 1, max: 10 }}
-                                    value={voteValues.visualImpact}
-                                    onChange={handleVoteChange}
-                                    name="visualImpact"
-                                    style={{ marginBottom: "0.5rem" }}
-                                    fullWidth
-                                />
-
-                                  <Typography
-                                    variant="caption" sx={{ margin: 2}} fontSize="12" color="#f0f0f0">
-                                    {user.category}
-                                </Typography>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={totalScoreSum > 0
-                                        ? (user.totalScore / totalScoreSum) * 100
-                                        : 0
-                                    }
-                                    sx={{
-                                        backgroundColor: "#414141",
-                                        marginTop: "0.5rem",
-                                        height: "10px",
-                                        borderRadius: "8px",
-                                        "& .MuiLinearProgress-bar": {
-                                            backgroundColor: "#3f51b5",
-                                        },
-                                    }}
-                                />
-                                <Typography variant="caption" style={{ display: "block", marginTop: "0.5rem" }}>
-                                    Pontuação: 
-                                        {user.totalScore} 
-                                        ({totalScoreSum > 0 ? 
-                                            ((user.totalScore / totalScoreSum) * 100).toFixed(2)
-                                            : 0
-                                        } %)
-                                </Typography>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => handleVote((user as any)._id)}
-                                    style={{ marginTop: "1rem" }}
-                                >
-                                    Votar
-                                </Button>
-                            </Grid>
-                        ))
-                    ) : (
-                        <Typography variant="body1">Nenhum participante cadastrado</Typography>
-                    )}
-                </Grid>
-            </form>
-        </Grid>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+        }}
+      >
+        <Typography sx={{ color: "#B8F3FF", fontSize: "1.5rem" }}>
+          Carregando...
+        </Typography>
+      </Box>
     );
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+        py: { xs: 4, md: 6 },
+      }}
+    >
+      <Container maxWidth="lg">
+        <PageHeader />
+
+        <Grid container spacing={3}>
+          {users.length > 0 ? (
+            users.map((user: any) => (
+              <Grid item xs={12} key={user._id}>
+                <CompetitorCard
+                  user={user}
+                  voteValues={voteValues}
+                  totalScoreSum={totalScoreSum}
+                  votingUserId={votingUserId}
+                  onSliderChange={handleSliderChange}
+                  onVote={handleVote}
+                />
+              </Grid>
+            ))
+          ) : (
+            <Grid item xs={12}>
+              <Box
+                sx={{
+                  textAlign: "center",
+                  py: 8,
+                  color: "#8AC6D0",
+                }}
+              >
+                <Typography variant="h6">
+                  Nenhum participante cadastrado
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+      </Container>
+    </Box>
+  );
 }
