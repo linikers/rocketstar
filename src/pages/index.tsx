@@ -93,7 +93,7 @@ function App() {
                 }}
                 onClick={handleNavigateAnimation}
               >
-                <HomeIcon sx={{ fontSize: 48, color: "#B8F3FF" }} />
+                {/* <HomeIcon sx={{ fontSize: 48, color: "#B8F3FF" }} /> */}
                 <Typography
                   variant="h3"
                   sx={{
