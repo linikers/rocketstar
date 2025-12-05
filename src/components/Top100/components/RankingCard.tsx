@@ -28,6 +28,8 @@ export default function RankingCard({ user, index }: RankingCardProps) {
   return (
     <Card
       sx={{
+        mt: 5,
+        width: "100%",
         minHeight: 420,
         maxHeight: 480,
         display: "flex",
