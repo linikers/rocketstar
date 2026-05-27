@@ -20,19 +20,53 @@ import {
   FormControlLabel,
   Checkbox,
   FormLabel,
+  Alert,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
   QrCode2 as QrCodeIcon,
   Event as EventIcon,
+  Logout as LogoutIcon,
+  RocketLaunch,
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
 import { categoryToDay } from "@/utils/categoryMap";
+import { useRouter } from "next/router";
 
 export default function AdminVotacaoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const router = useRouter();
+
+  const [user, setUser] = useState<{ nome: string; email: string; role: string } | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+
+    if (!token || !userData) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(userData);
+      setUser(parsed);
+    } catch {
+      router.push("/login");
+      return;
+    }
+
+    setAuthChecked(true);
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
 
   const [votacoes, setVotacoes] = useState<IVotacao[]>([]);
   const [formState, setFormState] = useState({
@@ -185,6 +219,22 @@ export default function AdminVotacaoPage() {
     }
   };
 
+  if (!authChecked) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+        }}
+      >
+        <Typography sx={{ color: "#B8F3FF" }}>Verificando acesso...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -196,6 +246,59 @@ export default function AdminVotacaoPage() {
       <Container maxWidth="lg">
         {/* Header */}
         <Box sx={{ mb: 6, textAlign: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Chip
+                icon={<RocketLaunch />}
+                label={user?.nome || "Admin"}
+                sx={{
+                  background: "rgba(184, 243, 255, 0.1)",
+                  color: "#B8F3FF",
+                  fontWeight: 600,
+                  border: "1px solid rgba(184, 243, 255, 0.2)",
+                  "& .MuiChip-icon": { color: "#B8F3FF" },
+                }}
+              />
+              <Chip
+                label={user?.role === "admin" ? "Administrador" : "Jurado"}
+                size="small"
+                sx={{
+                  background:
+                    user?.role === "admin"
+                      ? "rgba(184, 243, 255, 0.2)"
+                      : "rgba(138, 198, 208, 0.2)",
+                  color: "#8AC6D0",
+                  fontWeight: 500,
+                }}
+              />
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                color: "#8AC6D0",
+                borderColor: "rgba(184, 243, 255, 0.3)",
+                "&:hover": {
+                  borderColor: "#f44336",
+                  color: "#f44336",
+                  background: "rgba(244, 67, 54, 0.1)",
+                },
+              }}
+            >
+              Sair
+            </Button>
+          </Box>
           <Typography
             variant="h3"
             sx={{
