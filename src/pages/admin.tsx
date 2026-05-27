@@ -21,6 +21,10 @@ import {
   Checkbox,
   FormLabel,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -33,6 +37,15 @@ import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
 import { categoryToDay } from "@/utils/categoryMap";
 import { useRouter } from "next/router";
+
+interface UserData {
+  _id: string;
+  nome: string;
+  email: string;
+  role: string;
+  ativo: boolean;
+  criadoEm: string;
+}
 
 export default function AdminVotacaoPage() {
   const theme = useTheme();
@@ -94,7 +107,29 @@ export default function AdminVotacaoPage() {
     Array<IQRCodeAuth & { status: "valido" | "expirado" | "usado" }>
   >([]);
   const [validityHours, setValidityHours] = useState<number>(72);
-  const [jurorName, setJurorName] = useState<string>("");
+  const [jurorName, setJurorName] = useState("");
+
+  // Estados para Usuarios
+  const [users, setUsers] = useState<UserData[]>([]);
+  const [userDialogOpen, setUserDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const [userForm, setUserForm] = useState({
+    nome: "",
+    email: "",
+    senha: "",
+    role: "jurado",
+  });
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch("/api/users");
+      const result = await response.json();
+      if (result.success) setUsers(result.data);
+    } catch (error) {
+      console.error("Erro ao buscar usuários:", error);
+    }
+  };
+
   const [loadingQR, setLoadingQR] = useState(false);
 
   const fetchVotacoes = async () => {
@@ -122,6 +157,7 @@ export default function AdminVotacaoPage() {
   useEffect(() => {
     fetchVotacoes();
     fetchQRCodes();
+    fetchUsers();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,6 +253,39 @@ export default function AdminVotacaoPage() {
     } finally {
       setLoadingQR(false);
     }
+  };
+
+  // Handlers de Usuarios
+  const handleSaveUser = async () => {
+    if (!userForm.nome || !userForm.email) {
+      alert("Nome e email sao obrigatorios.");
+      return;
+    }
+    if (!editingUser && !userForm.senha) {
+      alert("Senha e obrigatoria para novos usuarios.");
+      return;
+    }
+    try {
+      if (editingUser) {
+        const body = { _id: editingUser._id, nome: userForm.nome, email: userForm.email, role: userForm.role };
+        if (userForm.senha) Object.assign(body, { senha: userForm.senha });
+        await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      } else {
+        await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(userForm) });
+      }
+      setUserDialogOpen(false);
+      setEditingUser(null);
+      setUserForm({ nome: "", email: "", senha: "", role: "jurado" });
+      fetchUsers();
+    } catch (error) {
+      console.error("Erro ao salvar usuario:", error);
+      alert("Erro ao salvar usuario.");
+    }
+  };
+
+  const handleToggleUser = async (user: UserData) => {
+    await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _id: user._id, ativo: !user.ativo }) });
+    fetchUsers();
   };
 
   if (!authChecked) {
@@ -709,6 +778,102 @@ export default function AdminVotacaoPage() {
           </Typography>
           <QRCodeTable qrCodes={qrCodes} />
         </Paper>
+
+        {/* Secao de Usuarios */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 2, md: 4 },
+            mt: 4,
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(184, 243, 255, 0.1)",
+          }}
+        >
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "#B8F3FF" }}>
+              Usuários
+            </Typography>
+            <Button variant="contained" size="small" onClick={() => { setEditingUser(null); setUserForm({ nome: "", email: "", senha: "", role: "jurado" }); setUserDialogOpen(true); }}>
+              Novo Usuário
+            </Button>
+          </Box>
+
+          {users.length === 0 ? (
+            <Typography sx={{ color: "#8AC6D0", opacity: 0.6, textAlign: "center", py: 4 }}>
+              Nenhum usuário cadastrado
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {users.map((u) => (
+                <Card key={u._id} sx={{ background: "rgba(255, 255, 255, 0.03)", borderRadius: 2, border: "1px solid rgba(184, 243, 255, 0.1)" }}>
+                  <CardContent sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1, py: 1.5, "&:last-child": { pb: 1.5 } }}>
+                    <Box>
+                      <Typography sx={{ color: "#B8F3FF", fontWeight: 600, fontSize: "0.95rem" }}>
+                        {u.nome}
+                      </Typography>
+                      <Typography sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}>
+                        {u.email}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                      <Chip label={u.role === "admin" ? "Admin" : "Jurado"} size="small" sx={{ background: u.role === "admin" ? "rgba(184, 243, 255, 0.2)" : "rgba(138, 198, 208, 0.2)", color: "#8AC6D0" }} />
+                      <Chip label={u.ativo ? "Ativo" : "Inativo"} size="small" color={u.ativo ? "success" : "default"} variant="outlined" />
+                      <IconButton size="small" onClick={() => { setEditingUser(u); setUserForm({ nome: u.nome, email: u.email, senha: "", role: u.role }); setUserDialogOpen(true); }} sx={{ color: "#B8F3FF" }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </IconButton>
+                      {u.role !== "admin" && (
+                        <IconButton size="small" onClick={() => handleToggleUser(u)} sx={{ color: u.ativo ? "#f44336" : "#4caf50" }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </IconButton>
+                      )}
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Paper>
+
+        {/* Dialog de Criar/Editar Usuario */}
+        <Dialog open={userDialogOpen} onClose={() => setUserDialogOpen(false)} maxWidth="sm" fullWidth
+          PaperProps={{ sx: { background: "linear-gradient(135deg, #36213E 0%, #554971 100%)", border: "1px solid rgba(184, 243, 255, 0.2)", borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ color: "#B8F3FF", fontWeight: 600, borderBottom: "1px solid rgba(184, 243, 255, 0.1)" }}>
+            {editingUser ? "Editar Usuário" : "Novo Usuário"}
+          </DialogTitle>
+          <DialogContent sx={{ py: 3 }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField label="Nome" value={userForm.nome} onChange={(e) => setUserForm((p) => ({ ...p, nome: e.target.value }))} fullWidth required
+                InputProps={{ sx: { color: "#B8F3FF", "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" }, "&:hover fieldset": { borderColor: "#8AC6D0" }, "&.Mui-focused fieldset": { borderColor: "#B8F3FF" } } }}
+                InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+              />
+              <TextField label="Email" type="email" value={userForm.email} onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))} fullWidth required
+                InputProps={{ sx: { color: "#B8F3FF", "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" }, "&:hover fieldset": { borderColor: "#8AC6D0" }, "&.Mui-focused fieldset": { borderColor: "#B8F3FF" } } }}
+                InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+              />
+              <TextField label={editingUser ? "Nova Senha (deixar vazio para manter)" : "Senha"} type="password" value={userForm.senha} onChange={(e) => setUserForm((p) => ({ ...p, senha: e.target.value }))} fullWidth required={!editingUser}
+                InputProps={{ sx: { color: "#B8F3FF", "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" }, "&:hover fieldset": { borderColor: "#8AC6D0" }, "&.Mui-focused fieldset": { borderColor: "#B8F3FF" } } }}
+                InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+              />
+              <TextField label="Tipo" select value={userForm.role} onChange={(e) => setUserForm((p) => ({ ...p, role: e.target.value }))} fullWidth
+                SelectProps={{ native: true }}
+                InputProps={{ sx: { color: "#B8F3FF", "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" } } }}
+                InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+              >
+                <option value="jurado">Jurado</option>
+                <option value="admin">Administrador</option>
+              </TextField>
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(184, 243, 255, 0.1)" }}>
+            <Button onClick={() => setUserDialogOpen(false)} sx={{ color: "#8AC6D0" }}>Cancelar</Button>
+            <Button variant="contained" onClick={handleSaveUser}>
+              {editingUser ? "Salvar" : "Criar"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );
