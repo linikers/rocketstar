@@ -20,8 +20,8 @@ const theme = createTheme({
       default: '#36213E',
     },
     text: {
-      primary: '#63768D',
-      secondary: '#554971',
+      primary: '#B8F3FF',
+      secondary: '#8AC6D0',
     },
   },
   typography: {
@@ -39,10 +39,9 @@ const theme = createTheme({
         root: {
           borderRadius: '8px',
           padding: '10px 20px',
-          transition: '0px 3px 6px rgba(0, 0, 0, 0.1)',
           boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.2)',
+          transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
           '&:hover': {
-            boxShadow: '0px 5px 10px rgba(0, 0, 0, 0.2)',
             transform: 'translateY(-2px)',
           },
         },
@@ -62,9 +61,9 @@ const theme = createTheme({
           },
         },
         text: {
-          color: '63768D',
+          color: '#8AC6D0',
           '&:hover': {
-            color: '#55971',
+            color: '#B8F3FF',
           }
         }
       }
