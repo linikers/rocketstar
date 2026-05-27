@@ -15,13 +15,19 @@ export default async function handler(
     await dbConnect();
 
     // Recebe validityHours do body, padrão 72h
-    const { validityHours = 72 } = req.body;
+    const { validityHours = 72, jurorName } = req.body;
 
     // Valida o valor
     if (typeof validityHours !== "number" || validityHours <= 0) {
       return res
         .status(400)
         .json({ error: "validityHours deve ser um número positivo" });
+    }
+
+    if (!jurorName || typeof jurorName !== "string" || jurorName.trim() === "") {
+      return res
+        .status(400)
+        .json({ error: "Nome do jurado é obrigatório" });
     }
 
     // Gera código único
@@ -34,6 +40,7 @@ export default async function handler(
     // Cria o QR Code no banco
     const qrCode = await QRCodeAuth.create({
       code,
+      jurorName: jurorName.trim(),
       expiresAt,
       createdAt: now,
       isUsed: false,

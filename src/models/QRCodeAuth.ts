@@ -4,6 +4,7 @@ import mongoose, { Schema, Document } from "mongoose";
 export interface IQRCodeAuth extends Document {
   _id: string;
   code: string; // Código único do QR
+  jurorName: string; // Nome do jurado
   expiresAt: Date; // Data de expiração
   createdAt: Date; // Data de criação
   usedAt?: Date; // Data de uso (se foi usado)
@@ -19,6 +20,10 @@ const QRCodeAuthSchema: Schema = new Schema({
     required: true,
     unique: true,
     index: true,
+  },
+  jurorName: {
+    type: String,
+    required: true,
   },
   expiresAt: {
     type: Date,
