@@ -126,6 +126,9 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
               }}
             >
               <TableCell sx={{ color: "#B8F3FF", fontWeight: 600 }}>
+                Jurado
+              </TableCell>
+              <TableCell sx={{ color: "#B8F3FF", fontWeight: 600 }}>
                 Código
               </TableCell>
               {!isMobile && (
@@ -158,7 +161,7 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
             {qrCodes.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={isMobile ? 3 : 6}
+                  colSpan={isMobile ? 4 : 7}
                   align="center"
                   sx={{
                     color: "#8AC6D0",
@@ -180,6 +183,9 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
                     borderBottom: "1px solid rgba(184, 243, 255, 0.1)",
                   }}
                 >
+                  <TableCell sx={{ color: "#8AC6D0", fontWeight: 600 }}>
+                    {qr.jurorName || "-"}
+                  </TableCell>
                   <TableCell sx={{ color: "#8AC6D0" }}>
                     <Tooltip title={qr.code}>
                       <span>{truncateCode(qr.code)}</span>

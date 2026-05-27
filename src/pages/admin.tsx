@@ -16,6 +16,10 @@ import {
   Paper,
   useTheme,
   useMediaQuery,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  FormLabel,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -24,6 +28,7 @@ import {
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
+import { categoryToDay } from "@/utils/categoryMap";
 
 export default function AdminVotacaoPage() {
   const theme = useTheme();
@@ -33,14 +38,29 @@ export default function AdminVotacaoPage() {
   const [formState, setFormState] = useState({
     nome: "",
     data: new Date().toISOString().split("T")[0],
-    categorias: "",
   });
+  const [selectedCategorias, setSelectedCategorias] = useState<string[]>([]);
+
+  // Agrupa categorias por dia
+  const categoriasPorDia: Record<string, string[]> = {};
+  Object.entries(categoryToDay).forEach(([cat, dia]) => {
+    if (!categoriasPorDia[dia]) categoriasPorDia[dia] = [];
+    categoriasPorDia[dia].push(cat);
+  });
+  const dias = Object.keys(categoriasPorDia);
+
+  const toggleCategoria = (cat: string) => {
+    setSelectedCategorias((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  };
 
   // Estados para QR Codes
   const [qrCodes, setQrCodes] = useState<
     Array<IQRCodeAuth & { status: "valido" | "expirado" | "usado" }>
   >([]);
   const [validityHours, setValidityHours] = useState<number>(72);
+  const [jurorName, setJurorName] = useState<string>("");
   const [loadingQR, setLoadingQR] = useState(false);
 
   const fetchVotacoes = async () => {
@@ -78,10 +98,7 @@ export default function AdminVotacaoPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    const categoriasArray = formState.categorias
-      .split(",")
-      .map((cat) => cat.trim())
-      .filter((cat) => cat);
+    const categoriasArray = selectedCategorias;
 
     if (!formState.nome || categoriasArray.length === 0) {
       alert("Nome e pelo menos uma categoria são obrigatórios.");
@@ -107,8 +124,8 @@ export default function AdminVotacaoPage() {
       setFormState({
         nome: "",
         data: new Date().toISOString().split("T")[0],
-        categorias: "",
       });
+      setSelectedCategorias([]);
       fetchVotacoes();
       alert("Votação criada com sucesso!");
     } catch (error) {
@@ -138,22 +155,27 @@ export default function AdminVotacaoPage() {
       alert("A validade deve ser maior que 0 horas.");
       return;
     }
+    if (!jurorName.trim()) {
+      alert("Informe o nome do jurado.");
+      return;
+    }
 
     setLoadingQR(true);
     try {
       const response = await fetch("/api/qrcodes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ validityHours }),
+        body: JSON.stringify({ validityHours, jurorName: jurorName.trim() }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        alert("QR Code gerado com sucesso!");
+        alert(`QR Code gerado para ${jurorName.trim()}!`);
+        setJurorName("");
         fetchQRCodes();
       } else {
-        alert("Erro ao gerar QR Code.");
+        alert(result.error || "Erro ao gerar QR Code.");
       }
     } catch (error) {
       console.error("Erro ao gerar QR Code:", error);
@@ -293,34 +315,63 @@ export default function AdminVotacaoPage() {
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <TextField
-                      name="categorias"
-                      label="Categorias (separadas por vírgula)"
-                      placeholder="Ex: Realismo, Old School, Aquarela"
-                      value={formState.categorias}
-                      onChange={handleInputChange}
-                      fullWidth
-                      required
-                      multiline
-                      rows={2}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          color: "#B8F3FF",
-                          "& fieldset": {
-                            borderColor: "rgba(184, 243, 255, 0.3)",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "#8AC6D0",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#B8F3FF",
-                          },
-                        },
-                        "& .MuiInputLabel-root": {
-                          color: "#8AC6D0",
-                        },
-                      }}
-                    />
+                    <FormLabel sx={{ color: "#8AC6D0", mb: 1, display: "block" }}>
+                      Categorias
+                    </FormLabel>
+                    {dias.map((dia) => (
+                      <Box key={dia} sx={{ mb: 2 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ color: "#B8F3FF", mb: 1, fontWeight: 600 }}
+                        >
+                          {dia}
+                        </Typography>
+                        <FormGroup row>
+                          {categoriasPorDia[dia].map((cat) => (
+                            <FormControlLabel
+                              key={cat}
+                              control={
+                                <Checkbox
+                                  checked={selectedCategorias.includes(cat)}
+                                  onChange={() => toggleCategoria(cat)}
+                                  size="small"
+                                  sx={{
+                                    color: "rgba(184, 243, 255, 0.5)",
+                                    "&.Mui-checked": {
+                                      color: "#B8F3FF",
+                                    },
+                                  }}
+                                />
+                              }
+                              label={cat}
+                              sx={{
+                                "& .MuiTypography-root": {
+                                  color: "#8AC6D0",
+                                  fontSize: "0.875rem",
+                                },
+                              }}
+                            />
+                          ))}
+                        </FormGroup>
+                      </Box>
+                    ))}
+                    {selectedCategorias.length > 0 && (
+                      <Stack direction="row" spacing={1} flexWrap="wrap" gap={1} sx={{ mt: 1 }}>
+                        {selectedCategorias.map((cat) => (
+                          <Chip
+                            key={cat}
+                            label={cat}
+                            size="small"
+                            onDelete={() => toggleCategoria(cat)}
+                            sx={{
+                              background: "rgba(184, 243, 255, 0.15)",
+                              color: "#B8F3FF",
+                              border: "1px solid rgba(184, 243, 255, 0.3)",
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    )}
                   </Grid>
                   <Grid item xs={12}>
                     <Button
@@ -471,7 +522,34 @@ export default function AdminVotacaoPage() {
                 Gerar Novo QR Code
               </Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    label="Nome do Jurado"
+                    value={jurorName}
+                    onChange={(e) => setJurorName(e.target.value)}
+                    fullWidth
+                    required
+                    placeholder="Ex: João Silva"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        color: "#B8F3FF",
+                        "& fieldset": {
+                          borderColor: "rgba(184, 243, 255, 0.3)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#8AC6D0",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#B8F3FF",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "#8AC6D0",
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
                   <TextField
                     label="Validade (horas)"
                     type="number"
@@ -503,7 +581,7 @@ export default function AdminVotacaoPage() {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={4}>
                   <Button
                     variant="contained"
                     onClick={handleGenerateQRCode}
