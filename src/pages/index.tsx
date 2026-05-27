@@ -93,17 +93,13 @@ function App() {
                 }}
                 onClick={handleNavigateAnimation}
               >
-                {/* <HomeIcon sx={{ fontSize: 48, color: "#B8F3FF" }} /> */}
                 <Typography
                   variant="h3"
                   sx={{
                     fontWeight: 700,
-                    background:
-                      "linear-gradient(45deg, #B8F3FF 30%, #8AC6D0 90%)",
-                    backgroundClip: "text",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
+                    color: "#B8F3FF",
                     fontSize: { xs: "2rem", md: "3rem" },
+                    textShadow: "0 0 20px rgba(184, 243, 255, 0.3)",
                   }}
                 >
                   Otttakucon

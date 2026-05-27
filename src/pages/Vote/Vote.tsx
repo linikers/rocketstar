@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
-import { Box, Grid, Typography, Container } from "@mui/material";
+import { Box, Grid, Typography, Container, Skeleton } from "@mui/material";
 import PageHeader from "@/components/Vote/PageHeader";
 import CompetitorCard from "@/components/Vote/CompetitorCard";
 
@@ -134,9 +134,12 @@ export default function Vote({ onOpenSnackBar }: VoteProps) {
           background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
         }}
       >
-        <Typography sx={{ color: "#B8F3FF", fontSize: "1.5rem" }}>
-          Carregando...
-        </Typography>
+        <Box sx={{ width: "80%", maxWidth: 600 }}>
+          <Skeleton variant="text" width="60%" height={40} sx={{ bgcolor: "rgba(184,243,255,0.1)", mb: 2 }} />
+          <Skeleton variant="rounded" height={120} sx={{ bgcolor: "rgba(184,243,255,0.1)", mb: 1 }} />
+          <Skeleton variant="rounded" height={120} sx={{ bgcolor: "rgba(184,243,255,0.1)", mb: 1 }} />
+          <Skeleton variant="rounded" height={120} sx={{ bgcolor: "rgba(184,243,255,0.1)" }} />
+        </Box>
       </Box>
     );
 
