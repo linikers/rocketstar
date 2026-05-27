@@ -132,6 +132,17 @@ export default function AdminVotacaoPage() {
 
   const [loadingQR, setLoadingQR] = useState(false);
 
+  // Dashboard
+  const [dashboard, setDashboard] = useState<any>(null);
+
+  const fetchDashboard = async () => {
+    try {
+      const r = await fetch("/api/dashboard");
+      const d = await r.json();
+      if (d.success) setDashboard(d.data);
+    } catch (_) {}
+  };
+
   const fetchVotacoes = async () => {
     try {
       const response = await fetch("/api/votacoes");
@@ -158,6 +169,7 @@ export default function AdminVotacaoPage() {
     fetchVotacoes();
     fetchQRCodes();
     fetchUsers();
+    fetchDashboard();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -386,6 +398,60 @@ export default function AdminVotacaoPage() {
             Gerencie votações e QR codes de autenticação
           </Typography>
         </Box>
+
+        {/* Dashboard */}
+        {dashboard && (
+          <Grid container spacing={2} sx={{ mb: 4 }}>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(184, 243, 255, 0.08)", borderRadius: 2, border: "1px solid rgba(184, 243, 255, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.totalVotacoes}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>Votações</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(138, 198, 208, 0.08)", borderRadius: 2, border: "1px solid rgba(138, 198, 208, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.totalCompetidores}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>Competidores</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(255, 215, 0, 0.08)", borderRadius: 2, border: "1px solid rgba(255, 215, 0, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.totalVotos}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>Votos</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(76, 175, 80, 0.08)", borderRadius: 2, border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.qrCodes.validos}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>QR Válidos</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(244, 67, 54, 0.08)", borderRadius: 2, border: "1px solid rgba(244, 67, 54, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.qrCodes.usados}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>QR Usados</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={6} sm={4} md={2}>
+              <Card sx={{ background: "rgba(255, 152, 0, 0.08)", borderRadius: 2, border: "1px solid rgba(255, 152, 0, 0.2)" }}>
+                <CardContent sx={{ textAlign: "center", py: 2 }}>
+                  <Typography sx={{ color: "#B8F3FF", fontSize: "1.8rem", fontWeight: 700 }}>{dashboard.totalUsers}</Typography>
+                  <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem" }}>Usuários</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
 
         {/* Seção de Votações */}
         <Paper
