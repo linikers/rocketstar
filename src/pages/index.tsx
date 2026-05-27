@@ -244,6 +244,7 @@ function App() {
                   onClick={handleNavigateVote}
                   variant={currentPage === "vote" ? "contained" : "outlined"}
                   startIcon={<VoteIcon />}
+                  fullWidth={true}
                   sx={{
                     color: currentPage === "vote" ? "#36213E" : "#8AC6D0",
                     borderColor: "rgba(184, 243, 255, 0.3)",
@@ -271,6 +272,7 @@ function App() {
                     currentPage === "register" ? "contained" : "outlined"
                   }
                   startIcon={<RegisterIcon />}
+                  fullWidth={true}
                   sx={{
                     color: currentPage === "register" ? "#36213E" : "#8AC6D0",
                     borderColor: "rgba(184, 243, 255, 0.3)",
@@ -296,6 +298,7 @@ function App() {
                   onClick={handleNavigateTop10}
                   variant={currentPage === "top10" ? "contained" : "outlined"}
                   startIcon={<TrophyIcon />}
+                  fullWidth={true}
                   sx={{
                     color: currentPage === "top10" ? "#36213E" : "#8AC6D0",
                     borderColor: "rgba(184, 243, 255, 0.3)",

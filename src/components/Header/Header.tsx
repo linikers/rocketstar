@@ -20,12 +20,13 @@ export const Header = ({ onClick }: any) => {
       onClick={onClick}
     >
       <Typography sx={{
-        transform: "rotateY(20deg)",
+        transform: { xs: "none", sm: "rotateY(20deg)" },
         transition: "transform 0.5s",
         marginBottom: "3rem",
         display: "flex",
         alignItems: "center",
         flexDirection: { xs: "column", sm: "row" },
+        textAlign: "center",
       }}>
         Rocket Tattoo
         <RocketLaunch sx={{
