@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
 import { Box, Grid, Typography, Container, Skeleton } from "@mui/material";
 import PageHeader from "@/components/Vote/PageHeader";
 import CompetitorCard from "@/components/Vote/CompetitorCard";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface VoteValuesState {
   anatomy: number;
@@ -15,12 +16,17 @@ interface VoteValuesState {
 }
 
 interface VoteProps {
-  onOpenSnackBar: (message: string) => void;
+  onOpenSnackBar?: (message: string) => void;
   users?: IUser[] | [];
   setUsers?: (users: IUser[]) => void;
 }
 
 export default function Vote({ onOpenSnackBar }: VoteProps) {
+  const { showSnackbar } = useSnackbar();
+  const notify = useCallback((msg: string) => {
+    if (onOpenSnackBar) onOpenSnackBar(msg);
+    else showSnackbar(msg);
+  }, [onOpenSnackBar, showSnackbar]);
   const [totalScoreSum, setTotalScoreSum] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [users, setUsers] = useState<IUser[]>([]);
@@ -52,14 +58,14 @@ export default function Vote({ onOpenSnackBar }: VoteProps) {
         setTotalScoreSum(total);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
-        onOpenSnackBar("Erro ao listar competidores");
+        notify("Erro ao listar competidores");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, [onOpenSnackBar]);
+  }, [notify]);
 
   const handleSliderChange =
     (name: string) => (event: Event, value: number | number[]) => {
@@ -113,10 +119,10 @@ export default function Vote({ onOpenSnackBar }: VoteProps) {
         visualImpact: 5,
         category: "",
       });
-      onOpenSnackBar("Voto registrado com sucesso! 🎉");
+      notify("Voto registrado com sucesso! 🎉");
     } catch (error) {
       console.error("Erro ao votar:", error);
-      onOpenSnackBar("Erro ao registrar voto");
+      notify("Erro ao registrar voto");
     } finally {
       setLoading(false);
       setVotingUserId(null);

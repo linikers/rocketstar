@@ -87,20 +87,20 @@ export default function CompetitorCard({
             >
               {user.name}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#8AC6D0", opacity: 0.8 }}>
+            <Typography variant="body2" sx={{ color: "#8AC6D0", opacity: 0.8, mb: 0.5 }}>
               {user.work}
             </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: "#8AC6D0",
+                fontWeight: 600,
+                fontSize: "1rem",
+              }}
+            >
+              {user.category}
+            </Typography>
           </Box>
-          <Chip
-            label={user.category}
-            icon={<StarIcon />}
-            sx={{
-              background: "rgba(138, 198, 208, 0.2)",
-              color: "#8AC6D0",
-              border: "1px solid rgba(138, 198, 208, 0.3)",
-              fontWeight: 600,
-            }}
-          />
         </Box>
 
         {/* Critérios de Votação */}
