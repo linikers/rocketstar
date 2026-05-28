@@ -27,6 +27,7 @@ import {
 import StatusBadge from "./StatusBadge";
 import QRCodeDisplay, { QRCodeDisplayRef } from "./QRcodeDisplay";
 import { IQRCodeAuth } from "@/models/QRCodeAuth";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface QRCodeTableProps {
   qrCodes: Array<IQRCodeAuth & { status: "valido" | "expirado" | "usado" }>;
