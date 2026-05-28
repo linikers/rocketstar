@@ -53,13 +53,9 @@ export default function AuthQRCodePage() {
           setJurorName(data.data?.jurorName || "");
           setMessage(data.message || "QR Code validado com sucesso!");
 
-          // Redireciona pra página de voto após 3 segundos
           setTimeout(() => {
-            router.push("/Vote/Vote");
+            router.push("/Vote/Vote?code=" + code);
           }, 3000);
-        } else if (data.error?.includes("já foi utilizado")) {
-          setStatus("usado");
-          setMessage("Este QR Code já foi utilizado.");
         } else if (data.error?.includes("expirado")) {
           setStatus("expirado");
           setMessage("Este QR Code expirou.");

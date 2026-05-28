@@ -36,6 +36,7 @@ import {
   Category as CategoryIcon,
   Info as InfoIcon,
   Home as HomeIcon,
+  People as PeopleIcon,
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
@@ -468,9 +469,27 @@ export default function AdminVotacaoPage() {
                 }}
               />
             </Box>
-            <Button
-              variant="outlined"
-              size="small"
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => router.push("/admin/jurados")}
+                startIcon={<PeopleIcon />}
+                sx={{
+                  color: "#8AC6D0",
+                  borderColor: "rgba(184, 243, 255, 0.3)",
+                  fontSize: "0.8rem",
+                  "&:hover": {
+                    borderColor: "#8AC6D0",
+                    background: "rgba(138, 198, 208, 0.1)",
+                  },
+                }}
+              >
+                Jurados
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
               startIcon={<LogoutIcon />}
               onClick={handleLogout}
               sx={{
@@ -486,7 +505,8 @@ export default function AdminVotacaoPage() {
               Sair
             </Button>
           </Box>
-          <Typography
+        </Box>
+        <Typography
             variant="h3"
             sx={{
               fontWeight: 700,
