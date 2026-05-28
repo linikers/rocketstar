@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
-// import mongoose, { Types } from "mongoose"; // Importa mongoose para usar ObjectId
 import Competidor, { IVoto } from "@/models/Competidor";
 
 export default async function handlerVote(
@@ -20,10 +19,21 @@ export default async function handlerVote(
     } = request.body;
 
     if (!competidorId) {
-      return response.status(400).json({ error: "competidorId e juradoId são obrigatórios." });
+      return response.status(400).json({ error: "competidorId é obrigatório." });
     }
 
-    await dbConnect(); // Garante a conexão com o banco de dados
+    await dbConnect();
+
+    // Verifica se o competidor ja recebeu voto
+    const existente = await Competidor.findById(competidorId);
+    if (!existente) {
+      return response.status(404).json({ error: 'Competidor não encontrado.' });
+    }
+    if (existente.votos && existente.votos.length > 0) {
+      return response.status(409).json({
+        error: 'Este competidor ja recebeu um voto. Não é permitido votar novamente.'
+      });
+    }
 
     const novoVoto: IVoto = {
       // juradoId: new Types.ObjectId(juradoId), // Converte para ObjectId

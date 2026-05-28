@@ -34,6 +34,8 @@ import {
   Logout as LogoutIcon,
   RocketLaunch,
   Category as CategoryIcon,
+  Info as InfoIcon,
+  Home as HomeIcon,
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
@@ -426,6 +428,22 @@ export default function AdminVotacaoPage() {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <IconButton
+                onClick={() => router.push("/landing")}
+                size="small"
+                sx={{ color: "#8AC6D0", "&:hover": { color: "#B8F3FF" } }}
+                title="Como funciona?"
+              >
+                <InfoIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={() => router.push("/")}
+                size="small"
+                sx={{ color: "#8AC6D0", "&:hover": { color: "#B8F3FF" } }}
+                title="Página inicial"
+              >
+                <HomeIcon fontSize="small" />
+              </IconButton>
               <Chip
                 icon={<RocketLaunch />}
                 label={user?.nome || "Admin"}
@@ -862,12 +880,12 @@ export default function AdminVotacaoPage() {
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {Object.entries(
-                competidores.reduce<Record<string, any[]>>((acc, c) => {
+                competidores.reduce((acc: any, c: any) => {
                   if (!acc[c.name]) acc[c.name] = [];
                   acc[c.name].push(c);
                   return acc;
-                }, {})
-              ).map(([nome, entries]: [string, any[]]) => (
+                }, {} as any)
+              ).map(([nome, entries]: any) => (
                 <Card
                   key={nome}
                   sx={{

@@ -29,15 +29,6 @@ export default async function handler(
       });
     }
 
-    // Verifica se já foi usado
-    if (qrCode.isUsed) {
-      return res.status(400).json({
-        success: false,
-        error: "QR Code já foi utilizado",
-        usedAt: qrCode.usedAt,
-      });
-    }
-
     // Verifica se expirou
     if (new Date() > qrCode.expiresAt) {
       return res.status(400).json({
@@ -47,15 +38,14 @@ export default async function handler(
       });
     }
 
-    // Marca como usado
-    qrCode.isUsed = true;
-    qrCode.usedAt = new Date();
-    await qrCode.save();
-
+    // QR valido — nao marca como usado para permitir reutilizacao
     return res.status(200).json({
       success: true,
       message: "QR Code validado com sucesso",
-      data: qrCode,
+      data: {
+        jurorName: qrCode.jurorName,
+        expiresAt: qrCode.expiresAt,
+      },
     });
   } catch (error) {
     console.error("Erro ao validar QR Code:", error);

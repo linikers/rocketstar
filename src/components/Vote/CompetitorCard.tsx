@@ -1,11 +1,11 @@
 import { Card, CardContent, Typography, Box, Grid, Button } from "@mui/material";
 import { useState } from "react";
-import { useRouter } from "next/router";
 import VotingCriteria from "./VotingCriteria";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface CompetitorCardProps {
   user: any;
+  onVoteComplete?: (id: string) => void;
 }
 
 const criteriaConfig = [
@@ -19,9 +19,8 @@ const criteriaConfig = [
 
 const DEFAULT_SLIDER = 5;
 
-export default function CompetitorCard({ user }: CompetitorCardProps) {
+export default function CompetitorCard({ user, onVoteComplete }: CompetitorCardProps) {
   const { showSnackbar } = useSnackbar();
-  const router = useRouter();
   const [voteValues, setVoteValues] = useState<Record<string, number>>({
     anatomy: DEFAULT_SLIDER,
     creativity: DEFAULT_SLIDER,
@@ -61,12 +60,8 @@ export default function CompetitorCard({ user }: CompetitorCardProps) {
       }
 
       setVoted(true);
+      onVoteComplete?.(user._id);
       showSnackbar("Voto registrado com sucesso! 🎉");
-
-      // Redireciona para classificacao apos 1.5s
-      setTimeout(() => {
-        router.push("/Top100/Top100");
-      }, 1500);
     } catch (error) {
       console.error("Erro ao votar:", error);
       showSnackbar("Erro ao registrar voto");

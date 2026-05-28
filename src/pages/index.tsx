@@ -11,6 +11,7 @@ import {
 import {
   PersonAdd as RegisterIcon,
   EmojiEvents as TrophyIcon,
+  Info as InfoIcon,
 } from "@mui/icons-material";
 import Register, { IUser } from "./Register/Register";
 import { Header } from "@/components/Header/Header";
@@ -273,6 +274,25 @@ function App() {
                   }}
                 >
                   Classificação Geral
+                </Button>
+                <Button
+                  onClick={() => window.open("/landing", "_self")}
+                  variant="outlined"
+                  startIcon={<InfoIcon />}
+                  fullWidth={true}
+                  sx={{
+                    color: "#8AC6D0",
+                    borderColor: "rgba(184, 243, 255, 0.3)",
+                    fontWeight: 600,
+                    px: 2,
+                    py: 1,
+                    "&:hover": {
+                      borderColor: "#8AC6D0",
+                      background: "rgba(138, 198, 208, 0.1)",
+                    },
+                  }}
+                >
+                  Como funciona?
                 </Button>
               </Box>
             </Grid>
