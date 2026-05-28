@@ -27,6 +27,7 @@ import {
 import StatusBadge from "./StatusBadge";
 import QRCodeDisplay, { QRCodeDisplayRef } from "./QRcodeDisplay";
 import { IQRCodeAuth } from "@/models/QRCodeAuth";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface QRCodeTableProps {
   qrCodes: Array<IQRCodeAuth & { status: "valido" | "expirado" | "usado" }>;
@@ -38,6 +39,7 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const qrDisplayRef = useRef<QRCodeDisplayRef>(null);
+  const { showSnackbar } = useSnackbar();
 
   const handleOpenDialog = (code: string) => {
     setSelectedQR(code);
@@ -59,12 +61,12 @@ export default function QRCodeTable({ qrCodes }: QRCodeTableProps) {
   const handleCopyUrl = (code: string) => {
     const url = getAuthUrl(code);
     navigator.clipboard.writeText(url);
-    alert("Link copiado para a área de transferência!");
+    showSnackbar("Link copiado para a área de transferência!", "success");
   };
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    alert("Código copiado!");
+    showSnackbar("Código copiado!", "success");
   };
 
   const handleShare = async (code: string) => {

@@ -41,6 +41,7 @@ import PersonalDataForm from "@/components/Register/PersonalDataForm";
 import VotingSelector from "@/components/Register/VotingSelector";
 import CategorySelector from "@/components/Register/CategorySelector";
 import RegistrationSummary from "@/components/Register/RegistrationSummary";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useRouter } from "next/router";
 
 interface UserData {
@@ -56,6 +57,7 @@ export default function AdminVotacaoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
 
   const [user, setUser] = useState<{ nome: string; email: string; role: string } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -199,12 +201,13 @@ export default function AdminVotacaoPage() {
       const data = await res.json();
       if (data.success) {
         fetchCompetidores();
+        showSnackbar("Competidor removido", "success");
       } else {
-        alert(data.error || "Erro ao deletar");
+        showSnackbar(data.error || "Erro ao deletar", "error");
       }
     } catch (error) {
       console.error("Erro ao deletar competidor:", error);
-      alert("Erro ao deletar competidor");
+      showSnackbar("Erro ao deletar competidor", "error");
     }
   };
 
@@ -212,7 +215,7 @@ export default function AdminVotacaoPage() {
     e.preventDefault();
     const { name, work, category, votacaoId } = competidorForm;
     if (!name || !work || !category || !votacaoId) {
-      alert("Preencha todos os campos do competidor");
+      showSnackbar("Preencha todos os campos", "warning");
       return;
     }
     setLoadingCompetidor(true);
@@ -223,16 +226,18 @@ export default function AdminVotacaoPage() {
         body: JSON.stringify({ name, work, category, votacaoId }),
       });
       if (res.ok) {
-        setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+        // Multi-submissao: mantem o nome, reseta trabalho + categoria + votacao
+        setCompetidorForm((p) => ({ ...p, work: "", category: "", votacaoId: "" }));
+        setCategoriasDaVotacao([]);
         fetchCompetidores();
-        alert("Competidor cadastrado com sucesso!");
+        showSnackbar("Competidor cadastrado! 👍", "success");
       } else {
         const err = await res.json();
-        alert(err.error || "Erro ao cadastrar");
+        showSnackbar(err.error || "Erro ao cadastrar", "error");
       }
     } catch (error) {
       console.error("Erro ao cadastrar competidor:", error);
-      alert("Erro ao cadastrar competidor");
+      showSnackbar("Erro ao cadastrar competidor", "error");
     } finally {
       setLoadingCompetidor(false);
     }
@@ -257,7 +262,7 @@ export default function AdminVotacaoPage() {
     const categoriasArray = selectedCategorias;
 
     if (!formState.nome || categoriasArray.length === 0) {
-      alert("Nome e pelo menos uma categoria são obrigatórios.");
+      showSnackbar("Nome e pelo menos uma categoria são obrigatórios.", "warning");
       return;
     }
 
@@ -283,10 +288,10 @@ export default function AdminVotacaoPage() {
       });
       setSelectedCategorias([]);
       fetchVotacoes();
-      alert("Votação criada com sucesso!");
+      showSnackbar("Votação criada com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao criar votação:", error);
-      alert("Erro ao criar votação.");
+      showSnackbar("Erro ao criar votação.", "error");
     }
   };
 
@@ -300,19 +305,19 @@ export default function AdminVotacaoPage() {
       });
       if (!response.ok) throw new Error("Falha ao deletar");
       fetchVotacoes();
-      alert("Votação deletada com sucesso.");
+      showSnackbar("Votação deletada com sucesso.", "success");
     } catch (error) {
-      alert("Erro ao deletar votação.");
+      showSnackbar("Erro ao deletar votação.", "error");
     }
   };
 
   const handleGenerateQRCode = async () => {
     if (validityHours <= 0) {
-      alert("A validade deve ser maior que 0 horas.");
+      showSnackbar("Validade deve ser maior que 0 horas.", "warning");
       return;
     }
     if (!jurorName.trim()) {
-      alert("Informe o nome do jurado.");
+      showSnackbar("Informe o nome do jurado.", "warning");
       return;
     }
 
@@ -327,15 +332,15 @@ export default function AdminVotacaoPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert(`QR Code gerado para ${jurorName.trim()}!`);
+        showSnackbar(`QR Code gerado para ${jurorName.trim()}!`, "success");
         setJurorName("");
         fetchQRCodes();
       } else {
-        alert(result.error || "Erro ao gerar QR Code.");
+        showSnackbar(result.error || "Erro ao gerar QR Code.", "error");
       }
     } catch (error) {
       console.error("Erro ao gerar QR Code:", error);
-      alert("Erro ao gerar QR Code.");
+      showSnackbar("Erro ao gerar QR Code.", "error");
     } finally {
       setLoadingQR(false);
     }
@@ -344,11 +349,11 @@ export default function AdminVotacaoPage() {
   // Handlers de Usuarios
   const handleSaveUser = async () => {
     if (!userForm.nome || !userForm.email) {
-      alert("Nome e email sao obrigatorios.");
+      showSnackbar("Nome e email são obrigatórios.", "warning");
       return;
     }
     if (!editingUser && !userForm.senha) {
-      alert("Senha e obrigatoria para novos usuarios.");
+      showSnackbar("Senha é obrigatória para novos usuários.", "warning");
       return;
     }
     try {
@@ -363,9 +368,10 @@ export default function AdminVotacaoPage() {
       setEditingUser(null);
       setUserForm({ nome: "", email: "", senha: "", role: "jurado" });
       fetchUsers();
+      showSnackbar("Usuário salvo com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao salvar usuario:", error);
-      alert("Erro ao salvar usuario.");
+      showSnackbar("Erro ao salvar usuário.", "error");
     }
   };
 
@@ -911,7 +917,7 @@ export default function AdminVotacaoPage() {
           fullWidth
           PaperProps={{
             sx: {
-              background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+              background: "#2D1B36",
               border: "1px solid rgba(184, 243, 255, 0.2)",
               borderRadius: 3,
             },

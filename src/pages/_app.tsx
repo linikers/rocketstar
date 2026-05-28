@@ -1,16 +1,17 @@
-
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { AppProps } from "next/app";
 import useGlobalStyles from "@/assets/themes/globalStyles";
 import { theme } from "@/assets/themes/theme";
-
+import { SnackbarProvider } from "@/contexts/SnackbarContext";
 
 function MyApp({ Component, pageProps }: AppProps) {
-    useGlobalStyles(); 
+    useGlobalStyles();
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <Component {...pageProps} />
+            <SnackbarProvider>
+                <Component {...pageProps} />
+            </SnackbarProvider>
         </ThemeProvider>
     );
 }
