@@ -1,40 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import { IUser } from "../Register/Register";
+import { useEffect, useState } from "react";
 import { Box, Grid, Typography, Container, Skeleton } from "@mui/material";
 import PageHeader from "@/components/Vote/PageHeader";
 import CompetitorCard from "@/components/Vote/CompetitorCard";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 
-interface VoteValuesState {
-  anatomy: number;
-  creativity: number;
-  pigmentation: number;
-  traces: number;
-  readability: number;
-  visualImpact: number;
-  category: string;
-}
-
 interface VoteProps {
-  users?: IUser[] | [];
-  setUsers?: (users: IUser[]) => void;
+  users?: any[];
+  setUsers?: (users: any[]) => void;
 }
 
 export default function Vote({ users: initialUsers, setUsers: setParentUsers }: VoteProps) {
   const { showSnackbar } = useSnackbar();
-  const [totalScoreSum, setTotalScoreSum] = useState(0);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [users, setUsers] = useState<IUser[]>([]);
-  const [voteValues, setVoteValues] = useState<VoteValuesState>({
-    anatomy: 5,
-    creativity: 5,
-    pigmentation: 5,
-    traces: 5,
-    readability: 5,
-    visualImpact: 5,
-    category: "",
-  });
-  const [votingUserId, setVotingUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -46,11 +24,6 @@ export default function Vote({ users: initialUsers, setUsers: setParentUsers }: 
         }
         const data = await response.json();
         setUsers(data);
-        const total = data.reduce(
-          (acc: number, user: { totalScore: number }) => acc + user.totalScore,
-          0
-        );
-        setTotalScoreSum(total);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
         showSnackbar("Erro ao listar competidores");
@@ -61,68 +34,6 @@ export default function Vote({ users: initialUsers, setUsers: setParentUsers }: 
 
     fetchUsers();
   }, [showSnackbar]);
-
-  const handleSliderChange =
-    (name: string) => (event: Event, value: number | number[]) => {
-      setVoteValues((prevValues) => ({
-        ...prevValues,
-        [name]: value as number,
-      }));
-    };
-
-  const handleVote = async (userId: string) => {
-    setVotingUserId(userId);
-
-    try {
-      setLoading(true);
-      const payload = {
-        anatomy: voteValues.anatomy,
-        creativity: voteValues.creativity,
-        pigmentation: voteValues.pigmentation,
-        traces: voteValues.traces,
-        readability: voteValues.readability,
-        visualImpact: voteValues.visualImpact,
-      };
-
-      const response = await fetch("/api/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, competidorId: userId }),
-      });
-      if (!response.ok) {
-        throw new Error("Erro ao registrar voto");
-      }
-      const updatedUser = await response.json();
-      const updatedUsers = users.map((user: any) =>
-        user._id === updatedUser._id ? { ...user, ...updatedUser } : user
-      );
-
-      setUsers(updatedUsers);
-      const newTotalScore = updatedUsers.reduce(
-        (acc, user) => acc + user.totalScore,
-        0
-      );
-      setTotalScoreSum(newTotalScore);
-
-      // Reset para valores médios
-      setVoteValues({
-        anatomy: 5,
-        creativity: 5,
-        pigmentation: 5,
-        traces: 5,
-        readability: 5,
-        visualImpact: 5,
-        category: "",
-      });
-      showSnackbar("Voto registrado com sucesso! 🎉");
-    } catch (error) {
-      console.error("Erro ao votar:", error);
-      showSnackbar("Erro ao registrar voto");
-    } finally {
-      setLoading(false);
-      setVotingUserId(null);
-    }
-  };
 
   if (loading && users.length === 0)
     return (
@@ -159,14 +70,7 @@ export default function Vote({ users: initialUsers, setUsers: setParentUsers }: 
           {users.length > 0 ? (
             users.map((user: any) => (
               <Grid item xs={12} key={user._id}>
-                <CompetitorCard
-                  user={user}
-                  voteValues={voteValues}
-                  totalScoreSum={totalScoreSum}
-                  votingUserId={votingUserId}
-                  onSliderChange={handleSliderChange}
-                  onVote={handleVote}
-                />
+                <CompetitorCard user={user} />
               </Grid>
             ))
           ) : (
