@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/mongodb";
+import { getDb } from "@/lib/mongodb";
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,8 +10,7 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
-    const db = (await dbConnect()).connection.db;
+    const db = await getDb();
 
     const now = new Date();
 
