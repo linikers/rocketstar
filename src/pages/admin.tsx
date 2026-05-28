@@ -116,7 +116,7 @@ export default function AdminVotacaoPage() {
   const [qrCodes, setQrCodes] = useState<
     Array<IQRCodeAuth & { status: "valido" | "expirado" | "usado" }>
   >([]);
-  const [validityHours, setValidityHours] = useState<number>(24);
+  const [validityHours, setValidityHours] = useState<number>(72);
   const [jurorName, setJurorName] = useState("");
 
   // Estados para Usuarios
