@@ -1,13 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/mongodb";
+import { getDb } from "@/lib/mongodb";
 import { hashSenha } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  await dbConnect();
-  const db = (await dbConnect()).connection.db;
+  const db = await getDb();
 
   try {
     // GET — Listar usuarios

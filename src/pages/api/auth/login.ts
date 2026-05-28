@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import dbConnect from "@/lib/mongodb";
+import { getDb } from "@/lib/mongodb";
 import { hashSenha, gerarToken } from "@/lib/auth";
 
 export default async function handler(
@@ -11,15 +11,13 @@ export default async function handler(
   }
 
   try {
-    await dbConnect();
-
     const { email, senha } = req.body;
 
     if (!email || !senha) {
       return res.status(400).json({ error: "Email e senha são obrigatórios" });
     }
 
-    const db = (await dbConnect()).connection.db;
+    const db = await getDb();
     const user = await db.collection("users").findOne({ email });
 
     if (!user) {

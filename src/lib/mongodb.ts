@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import type { Db } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
@@ -15,15 +16,10 @@ async function dbConnect() {
   }
 
   const opts = {
-    bufferCommands: false, // Desabilita o buffering do Mongoose para melhor tratamento de erros
-    // Adicione outras opções de conexão do Mongoose aqui, se necessário
-    // useNewUrlParser: true, // Deprecated in Mongoose 6+
-    // useUnifiedTopology: true, // Deprecated in Mongoose 6+
+    bufferCommands: false,
   };
 
   if (process.env.NODE_ENV === 'development') {
-    // No modo de desenvolvimento, use uma variável global para que o valor seja preservado
-    // entre as recargas de módulo causadas pelo HMR (Hot Module Replacement).
     let globalWithMongo = global as typeof global & {
       _mongooseClientPromise?: Promise<typeof mongoose>;
     };
@@ -33,11 +29,19 @@ async function dbConnect() {
     }
     cachedMongoose = await globalWithMongo._mongooseClientPromise;
   } else {
-    // No modo de produção, é melhor não usar uma variável global.
     cachedMongoose = await mongoose.connect(uri, opts);
   }
 
   return cachedMongoose;
+}
+
+export async function getDb(): Promise<Db> {
+  const conn = await dbConnect();
+  const db = conn.connection.db;
+  if (!db) {
+    throw new Error('MongoDB connection not established');
+  }
+  return db;
 }
 
 export default dbConnect;
