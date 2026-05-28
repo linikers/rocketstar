@@ -15,6 +15,7 @@ import {
   RocketLaunch,
 } from "@mui/icons-material";
 import { useState } from "react";
+import Logo from "@/components/Logo/Logo";
 
 const steps = [
   {
@@ -67,78 +68,8 @@ export default function Landing() {
           }}
         />
                   <Box sx={{ mb: 6, textAlign: "center" }}>
-            <Box
-              onClick={handleNavigateAnimation}
-              sx={{
-                display: "inline-flex",
-                alignItems: "flex-end",
-                position: "relative",
-                cursor: "pointer",
-              }}
-            >
-              {/* Borda neon */}
-              <Box
-                sx={{
-                  position: "relative",
-                  px: { xs: 3, md: 5 },
-                  py: { xs: 1.5, md: 2 },
-                  borderRadius: "18px",
-                  background:
-                    "linear-gradient(90deg, #00E5FF 0%, #7C4DFF 50%, #FF00AA 100%)",
-                  boxShadow: `
-                    0 0 10px #00E5FF,
-                    0 0 20px #7C4DFF,
-                    0 0 30px #FF00AA
-                  `,
-                }}
-              >
-                {/* Fundo interno */}
-                <Box
-                  sx={{
-                    bgcolor: "#050505",
-                    borderRadius: "14px",
-                    px: { xs: 2, md: 4 },
-                    py: { xs: 1, md: 1.5 },
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "'Bebas Neue', sans-serif",
-                      fontSize: { xs: "3rem", md: "5rem" },
-                      lineHeight: 1,
-                      color: "#fff",
-                      letterSpacing: "4px",
-                      textShadow: `
-                        0 0 10px rgba(255,255,255,0.4),
-                        0 0 20px rgba(255,255,255,0.2)
-                      `,
-                    }}
-                  >
-                    OTTAKU
-                  </Typography>
-                </Box>
-              </Box>
-
-              {/* CON */}
-              <Typography
-                sx={{
-                  position: "absolute",
-                  right: { xs: -15, md: -25 },
-                  bottom: { xs: -10, md: -15 },
-                  bgcolor: "#000",
-                  px: 1,
-                  borderRadius: 1,
-                  fontFamily: "'Bebas Neue', sans-serif",
-                  fontSize: { xs: "2rem", md: "3rem" },
-                  color: "#fff",
-                  lineHeight: 1,
-                  textShadow: "0 0 10px rgba(255,255,255,0.4)",
-                  boxShadow: "0 0 15px rgba(0,0,0,0.8)",
-                }}
-              >
-                CON
-              </Typography>
-            </Box>
+            <Logo size="lg" />
+        </Box>
         <Typography
           variant="h5"
           sx={{
