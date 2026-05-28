@@ -8,6 +8,15 @@ export default async function handler(request: NextApiRequest, response: NextApi
   try {
     await dbConnect(); // Conecta ao banco de dados
 
+    if (request.method === 'DELETE') {
+      const { id } = request.query;
+      if (!id) {
+        return response.status(400).json({ error: 'ID do competidor é obrigatório' });
+      }
+      await Competidor.findByIdAndDelete(id);
+      return response.status(200).json({ success: true });
+    }
+
     if (request.method === 'POST') {
       const { name, work, category, votacaoId } = request.body;
 

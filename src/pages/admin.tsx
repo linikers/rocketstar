@@ -28,6 +28,7 @@ import {
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
+  PersonAdd as PersonAddIcon,
   QrCode2 as QrCodeIcon,
   Event as EventIcon,
   Logout as LogoutIcon,
@@ -36,6 +37,10 @@ import {
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
 import { categoryToDay } from "@/utils/categoryMap";
+import PersonalDataForm from "@/components/Register/PersonalDataForm";
+import VotingSelector from "@/components/Register/VotingSelector";
+import CategorySelector from "@/components/Register/CategorySelector";
+import RegistrationSummary from "@/components/Register/RegistrationSummary";
 import { useRouter } from "next/router";
 
 interface UserData {
@@ -120,6 +125,18 @@ export default function AdminVotacaoPage() {
     role: "jurado",
   });
 
+  // Estados para Competidores
+  const [competidores, setCompetidores] = useState<any[]>([]);
+  const [competidorDialogOpen, setCompetidorDialogOpen] = useState(false);
+  const [categoriasDaVotacao, setCategoriasDaVotacao] = useState<string[]>([]);
+  const [competidorForm, setCompetidorForm] = useState({
+    name: "",
+    work: "",
+    category: "",
+    votacaoId: "",
+  });
+  const [loadingCompetidor, setLoadingCompetidor] = useState(false);
+
   const fetchUsers = async () => {
     try {
       const response = await fetch("/api/users");
@@ -165,11 +182,68 @@ export default function AdminVotacaoPage() {
     }
   };
 
+  const fetchCompetidores = async () => {
+    try {
+      const response = await fetch("/api/list");
+      const data = await response.json();
+      if (Array.isArray(data)) setCompetidores(data);
+    } catch (error) {
+      console.error("Erro ao buscar competidores:", error);
+    }
+  };
+
+  const handleDeleteCompetidor = async (id: string, name: string) => {
+    if (!window.confirm(`Deletar competidor "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/save?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchCompetidores();
+      } else {
+        alert(data.error || "Erro ao deletar");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar competidor:", error);
+      alert("Erro ao deletar competidor");
+    }
+  };
+
+  const handleSaveCompetidor = async (e: FormEvent) => {
+    e.preventDefault();
+    const { name, work, category, votacaoId } = competidorForm;
+    if (!name || !work || !category || !votacaoId) {
+      alert("Preencha todos os campos do competidor");
+      return;
+    }
+    setLoadingCompetidor(true);
+    try {
+      const res = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, work, category, votacaoId }),
+      });
+      if (res.ok) {
+        setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+        fetchCompetidores();
+        alert("Competidor cadastrado com sucesso!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erro ao cadastrar");
+      }
+    } catch (error) {
+      console.error("Erro ao cadastrar competidor:", error);
+      alert("Erro ao cadastrar competidor");
+    } finally {
+      setLoadingCompetidor(false);
+    }
+  };
+
   useEffect(() => {
     fetchVotacoes();
     fetchQRCodes();
     fetchUsers();
     fetchDashboard();
+    fetchCompetidores();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -718,6 +792,210 @@ export default function AdminVotacaoPage() {
             )}
           </Grid>
         </Paper>
+
+        {/* Seção de Competidores */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 2, md: 4 },
+            mt: 4,
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(184, 243, 255, 0.1)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            <Typography variant="h5" sx={{ fontWeight: 600, color: "#B8F3FF" }}>
+              Competidores
+            </Typography>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<PersonAddIcon />}
+              onClick={() => {
+                setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+                setCategoriasDaVotacao([]);
+                setCompetidorDialogOpen(true);
+              }}
+            >
+              Novo Competidor
+            </Button>
+          </Box>
+
+          {/* Lista de Competidores */}
+          {competidores.length === 0 ? (
+            <Typography
+              sx={{
+                color: "#8AC6D0",
+                opacity: 0.6,
+                textAlign: "center",
+                py: 4,
+              }}
+            >
+              Nenhum competidor cadastrado ainda
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {competidores.map((c: any) => (
+                <Card
+                  key={c._id}
+                  sx={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    borderRadius: 2,
+                    border: "1px solid rgba(184, 243, 255, 0.1)",
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      py: 1.5,
+                      "&:last-child": { pb: 1.5 },
+                    }}
+                  >
+                    <Box>
+                      <Typography
+                        sx={{
+                          color: "#B8F3FF",
+                          fontWeight: 600,
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        {c.name}
+                      </Typography>
+                      <Typography sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}>
+                        {c.work} — {c.category}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: "#8AC6D0",
+                          fontSize: "0.75rem",
+                          opacity: 0.7,
+                        }}
+                      >
+                        {c.votacaoId?.nome || "Votação removida"}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteCompetidor(c._id, c.name)}
+                      sx={{ color: "#f44336" }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Paper>
+
+        {/* Dialog de Cadastro de Competidor */}
+        <Dialog
+          open={competidorDialogOpen}
+          onClose={() => setCompetidorDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+              border: "1px solid rgba(184, 243, 255, 0.2)",
+              borderRadius: 3,
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              color: "#B8F3FF",
+              fontWeight: 600,
+              borderBottom: "1px solid rgba(184, 243, 255, 0.1)",
+            }}
+          >
+            Novo Competidor
+          </DialogTitle>
+          <form onSubmit={handleSaveCompetidor}>
+            <DialogContent sx={{ py: 3 }}>
+              <Grid container spacing={3}>
+                <PersonalDataForm
+                  name={competidorForm.name}
+                  work={competidorForm.work}
+                  onNameChange={(name) =>
+                    setCompetidorForm((p) => ({ ...p, name }))
+                  }
+                  onWorkChange={(work) =>
+                    setCompetidorForm((p) => ({ ...p, work }))
+                  }
+                />
+
+                <VotingSelector
+                  votacoes={votacoes}
+                  selectedVotacaoId={competidorForm.votacaoId}
+                  onVotacaoChange={(votacaoId) => {
+                    setCompetidorForm((p) => ({ ...p, votacaoId, category: "" }));
+                    const votacao = votacoes.find((v) => v._id === votacaoId);
+                    setCategoriasDaVotacao(votacao?.categorias || []);
+                  }}
+                />
+
+                <CategorySelector
+                  categorias={categoriasDaVotacao}
+                  selectedCategory={competidorForm.category}
+                  onCategoryChange={(category) =>
+                    setCompetidorForm((p) => ({ ...p, category }))
+                  }
+                />
+
+                <RegistrationSummary
+                  name={competidorForm.name}
+                  work={competidorForm.work}
+                  votacaoNome={
+                    votacoes.find(
+                      (v) => v._id === competidorForm.votacaoId
+                    )?.nome || ""
+                  }
+                  category={competidorForm.category}
+                />
+              </Grid>
+            </DialogContent>
+            <DialogActions
+              sx={{
+                p: 2,
+                borderTop: "1px solid rgba(184, 243, 255, 0.1)",
+              }}
+            >
+              <Button
+                onClick={() => setCompetidorDialogOpen(false)}
+                sx={{ color: "#8AC6D0" }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={
+                  !competidorForm.name ||
+                  !competidorForm.votacaoId ||
+                  !competidorForm.category
+                }
+              >
+                {loadingCompetidor ? "Cadastrando..." : "Cadastrar"}
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
 
         {/* Seção de QR Codes */}
         <Paper
