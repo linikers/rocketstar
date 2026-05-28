@@ -1,4 +1,5 @@
 import { IVotacao } from "@/models/Votacao";
+import { ICompetidor } from "@/models/Competidor";
 import { IQRCodeAuth } from "@/models/QRCodeAuth";
 import {
   Button,
@@ -120,6 +121,16 @@ export default function AdminVotacaoPage() {
     role: "jurado",
   });
 
+  // Estados para Competidores
+  const [competidores, setCompetidores] = useState<any[]>([]);
+  const [competidorForm, setCompetidorForm] = useState({
+    name: "",
+    work: "",
+    category: "",
+    votacaoId: "",
+  });
+  const [loadingCompetidor, setLoadingCompetidor] = useState(false);
+
   const fetchUsers = async () => {
     try {
       const response = await fetch("/api/users");
@@ -165,11 +176,68 @@ export default function AdminVotacaoPage() {
     }
   };
 
+  const fetchCompetidores = async () => {
+    try {
+      const response = await fetch("/api/list");
+      const data = await response.json();
+      if (Array.isArray(data)) setCompetidores(data);
+    } catch (error) {
+      console.error("Erro ao buscar competidores:", error);
+    }
+  };
+
+  const handleDeleteCompetidor = async (id: string, name: string) => {
+    if (!window.confirm(`Deletar competidor "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/save?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        fetchCompetidores();
+      } else {
+        alert(data.error || "Erro ao deletar");
+      }
+    } catch (error) {
+      console.error("Erro ao deletar competidor:", error);
+      alert("Erro ao deletar competidor");
+    }
+  };
+
+  const handleSaveCompetidor = async (e: FormEvent) => {
+    e.preventDefault();
+    const { name, work, category, votacaoId } = competidorForm;
+    if (!name || !work || !category || !votacaoId) {
+      alert("Preencha todos os campos do competidor");
+      return;
+    }
+    setLoadingCompetidor(true);
+    try {
+      const res = await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, work, category, votacaoId }),
+      });
+      if (res.ok) {
+        setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+        fetchCompetidores();
+        alert("Competidor cadastrado com sucesso!");
+      } else {
+        const err = await res.json();
+        alert(err.error || "Erro ao cadastrar");
+      }
+    } catch (error) {
+      console.error("Erro ao cadastrar competidor:", error);
+      alert("Erro ao cadastrar competidor");
+    } finally {
+      setLoadingCompetidor(false);
+    }
+  };
+
   useEffect(() => {
     fetchVotacoes();
     fetchQRCodes();
     fetchUsers();
     fetchDashboard();
+    fetchCompetidores();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -717,6 +785,218 @@ export default function AdminVotacaoPage() {
               ))
             )}
           </Grid>
+        </Paper>
+
+        {/* Seção de Competidores */}
+        <Paper
+          elevation={3}
+          sx={{
+            p: { xs: 2, md: 4 },
+            mt: 4,
+            borderRadius: 3,
+            background: "rgba(255, 255, 255, 0.05)",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(184, 243, 255, 0.1)",
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: "#B8F3FF",
+              }}
+            >
+              Competidores
+            </Typography>
+          </Box>
+
+          {/* Formulário de Cadastro */}
+          <Card
+            sx={{
+              mb: 4,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 2,
+              border: "1px solid rgba(184, 243, 255, 0.1)",
+            }}
+          >
+            <CardContent>
+              <Typography
+                variant="h6"
+                sx={{ mb: 3, color: "#8AC6D0", fontWeight: 500 }}
+              >
+                Cadastrar Novo Competidor
+              </Typography>
+              <form onSubmit={handleSaveCompetidor}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Nome do Artista"
+                      value={competidorForm.name}
+                      onChange={(e) =>
+                        setCompetidorForm((p) => ({ ...p, name: e.target.value }))
+                      }
+                      fullWidth
+                      required
+                      placeholder="Ex: João Tatuador"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "#B8F3FF",
+                          "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" },
+                          "&:hover fieldset": { borderColor: "#8AC6D0" },
+                          "&.Mui-focused fieldset": { borderColor: "#B8F3FF" },
+                        },
+                        "& .MuiInputLabel-root": { color: "#8AC6D0" },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Nome do Trabalho"
+                      value={competidorForm.work}
+                      onChange={(e) =>
+                        setCompetidorForm((p) => ({ ...p, work: e.target.value }))
+                      }
+                      fullWidth
+                      required
+                      placeholder="Ex: Dragão Azul"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          color: "#B8F3FF",
+                          "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" },
+                          "&:hover fieldset": { borderColor: "#8AC6D0" },
+                          "&.Mui-focused fieldset": { borderColor: "#B8F3FF" },
+                        },
+                        "& .MuiInputLabel-root": { color: "#8AC6D0" },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Categoria"
+                      select
+                      value={competidorForm.category}
+                      onChange={(e) =>
+                        setCompetidorForm((p) => ({ ...p, category: e.target.value }))
+                      }
+                      fullWidth
+                      required
+                      SelectProps={{ native: true }}
+                      InputProps={{
+                        sx: {
+                          color: "#B8F3FF",
+                          "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" },
+                        },
+                      }}
+                      InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+                    >
+                      <option value="">Selecione...</option>
+                      {Object.keys(categoryToDay).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat} ({categoryToDay[cat as keyof typeof categoryToDay]})
+                        </option>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Votação"
+                      select
+                      value={competidorForm.votacaoId}
+                      onChange={(e) =>
+                        setCompetidorForm((p) => ({ ...p, votacaoId: e.target.value }))
+                      }
+                      fullWidth
+                      required
+                      SelectProps={{ native: true }}
+                      InputProps={{
+                        sx: {
+                          color: "#B8F3FF",
+                          "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" },
+                        },
+                      }}
+                      InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+                    >
+                      <option value="">Selecione...</option>
+                      {votacoes.map((v) => (
+                        <option key={v._id} value={v._id}>
+                          {v.nome} - {new Date(v.data).toLocaleDateString("pt-BR")}
+                        </option>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={loadingCompetidor}
+                      sx={{ minWidth: 200 }}
+                    >
+                      {loadingCompetidor ? "Cadastrando..." : "Cadastrar Competidor"}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Lista de Competidores */}
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, color: "#8AC6D0", fontWeight: 500 }}
+          >
+            Competidores Cadastrados
+          </Typography>
+          {competidores.length === 0 ? (
+            <Typography sx={{ color: "#8AC6D0", opacity: 0.6, textAlign: "center", py: 4 }}>
+              Nenhum competidor cadastrado ainda
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {competidores.map((c) => (
+                <Card
+                  key={c._id}
+                  sx={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    borderRadius: 2,
+                    border: "1px solid rgba(184, 243, 255, 0.1)",
+                  }}
+                >
+                  <CardContent
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 1,
+                      py: 1.5,
+                      "&:last-child": { pb: 1.5 },
+                    }}
+                  >
+                    <Box>
+                      <Typography sx={{ color: "#B8F3FF", fontWeight: 600, fontSize: "0.95rem" }}>
+                        {c.name}
+                      </Typography>
+                      <Typography sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}>
+                        {c.work} — {c.category}
+                      </Typography>
+                      <Typography sx={{ color: "#8AC6D0", fontSize: "0.75rem", opacity: 0.7 }}>
+                        {c.votacaoId?.nome || "Votação removida"}
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDeleteCompetidor(c._id, c.name)}
+                      sx={{ color: "#f44336" }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </CardContent>
+                </Card>
+              ))}
+            </Box>
+          )}
         </Paper>
 
         {/* Seção de QR Codes */}
