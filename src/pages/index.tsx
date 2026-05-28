@@ -329,7 +329,6 @@ function App() {
             >
               {currentPage === "vote" && (
                 <Vote
-                  onOpenSnackBar={handleOpenSnackBar}
                   users={users}
                   setUsers={setUsers}
                 />

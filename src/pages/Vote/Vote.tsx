@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { IUser } from "../Register/Register";
 import { Box, Grid, Typography, Container, Skeleton } from "@mui/material";
 import PageHeader from "@/components/Vote/PageHeader";
 import CompetitorCard from "@/components/Vote/CompetitorCard";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface VoteValuesState {
   anatomy: number;
@@ -15,15 +16,12 @@ interface VoteValuesState {
 }
 
 interface VoteProps {
-  onOpenSnackBar?: (message: string) => void;
   users?: IUser[] | [];
   setUsers?: (users: IUser[]) => void;
 }
 
-export default function Vote({ onOpenSnackBar }: VoteProps) {
-  function notify(msg: string) {
-    if (onOpenSnackBar) onOpenSnackBar(msg);
-  }
+export default function Vote({ users: initialUsers, setUsers: setParentUsers }: VoteProps) {
+  const { showSnackbar } = useSnackbar();
   const [totalScoreSum, setTotalScoreSum] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [users, setUsers] = useState<IUser[]>([]);
@@ -55,14 +53,14 @@ export default function Vote({ onOpenSnackBar }: VoteProps) {
         setTotalScoreSum(total);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
-        notify("Erro ao listar competidores");
+        showSnackbar("Erro ao listar competidores");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, [notify]);
+  }, [showSnackbar]);
 
   const handleSliderChange =
     (name: string) => (event: Event, value: number | number[]) => {
@@ -116,10 +114,10 @@ export default function Vote({ onOpenSnackBar }: VoteProps) {
         visualImpact: 5,
         category: "",
       });
-      notify("Voto registrado com sucesso! 🎉");
+      showSnackbar("Voto registrado com sucesso! 🎉");
     } catch (error) {
       console.error("Erro ao votar:", error);
-      notify("Erro ao registrar voto");
+      showSnackbar("Erro ao registrar voto");
     } finally {
       setLoading(false);
       setVotingUserId(null);
