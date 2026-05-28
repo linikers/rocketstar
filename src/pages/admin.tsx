@@ -860,10 +860,16 @@ export default function AdminVotacaoPage() {
               Nenhum competidor cadastrado ainda
             </Typography>
           ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {competidores.map((c: any) => (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {Object.entries(
+                competidores.reduce<Record<string, any[]>>((acc, c) => {
+                  if (!acc[c.name]) acc[c.name] = [];
+                  acc[c.name].push(c);
+                  return acc;
+                }, {})
+              ).map(([nome, entries]: [string, any[]]) => (
                 <Card
-                  key={c._id}
+                  key={nome}
                   sx={{
                     background: "rgba(255, 255, 255, 0.03)",
                     borderRadius: 2,
@@ -872,45 +878,151 @@ export default function AdminVotacaoPage() {
                 >
                   <CardContent
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 1,
-                      py: 1.5,
-                      "&:last-child": { pb: 1.5 },
+                      py: 2,
+                      "&:last-child": { pb: 2 },
                     }}
                   >
-                    <Box>
-                      <Typography
-                        sx={{
-                          color: "#B8F3FF",
-                          fontWeight: 600,
-                          fontSize: "0.95rem",
-                        }}
-                      >
-                        {c.name}
-                      </Typography>
-                      <Typography sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}>
-                        {c.work} — {c.category}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          color: "#8AC6D0",
-                          fontSize: "0.75rem",
-                          opacity: 0.7,
-                        }}
-                      >
-                        {c.votacaoId?.nome || "Votação removida"}
-                      </Typography>
-                    </Box>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteCompetidor(c._id, c.name)}
-                      sx={{ color: "#f44336" }}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        flexWrap: "wrap",
+                        gap: 1,
+                      }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
+                      <Box>
+                        <Typography
+                          sx={{
+                            color: "#B8F3FF",
+                            fontWeight: 700,
+                            fontSize: "1rem",
+                          }}
+                        >
+                          {nome}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            color: "#8AC6D0",
+                            fontSize: "0.8rem",
+                            mt: 0.5,
+                          }}
+                        >
+                          {entries.length}{" "}
+                          {entries.length === 1
+                            ? "categoria"
+                            : "categorias"}{" "}
+                          inscrita(s){/* Mostra categorias agrupadas */}
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Deletar TODAS as inscrições de "${nome}"?`
+                            )
+                          ) {
+                            Promise.all(
+                              entries.map((e: any) =>
+                                fetch(`/api/save?id=${e._id}`, {
+                                  method: "DELETE",
+                                })
+                              )
+                            ).then(() => {
+                              fetchCompetidores();
+                              showSnackbar(
+                                `${entries.length} inscrição(ões) de "${nome}" removida(s)`,
+                                "success"
+                              );
+                            });
+                          }
+                        }}
+                        sx={{
+                          borderColor: "rgba(244, 67, 54, 0.4)",
+                          color: "#f44336",
+                          fontSize: "0.75rem",
+                          "&:hover": {
+                            borderColor: "#f44336",
+                            background: "rgba(244, 67, 54, 0.1)",
+                          },
+                        }}
+                      >
+                        Remover tudo
+                      </Button>
+                    </Box>
+
+                    {/* Lista de categorias */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 1,
+                        mt: 2,
+                      }}
+                    >
+                      {entries.map((c: any) => (
+                        <Box
+                          key={c._id}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            background: "rgba(138, 198, 208, 0.1)",
+                            borderRadius: 1,
+                            px: 1,
+                            py: 0.3,
+                            border: "1px solid rgba(138, 198, 208, 0.2)",
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "#8AC6D0",
+                              fontSize: "0.8rem",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {c.category}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: "#8AC6D0",
+                              fontSize: "0.7rem",
+                              opacity: 0.6,
+                              mx: 0.3,
+                            }}
+                          >
+                            —
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: "#B8F3FF",
+                              fontSize: "0.75rem",
+                              fontWeight: 500,
+                            }}
+                          >
+                            {c.work}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              handleDeleteCompetidor(c._id, `${c.work} (${c.category})`)
+                            }
+                            sx={{
+                              color: "#f44336",
+                              opacity: 0.6,
+                              "&:hover": { opacity: 1 },
+                              ml: 0.5,
+                              p: 0.3,
+                            }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
                   </CardContent>
                 </Card>
               ))}
