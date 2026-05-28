@@ -14,6 +14,8 @@ import {
   EmojiEvents as TrophyIcon,
   RocketLaunch,
 } from "@mui/icons-material";
+import { useState } from "react";
+import Logo from "@/components/Logo/Logo";
 
 const steps = [
   {
@@ -35,6 +37,12 @@ const steps = [
 
 export default function Landing() {
   const router = useRouter();
+
+  const [currentPage, setCurrentPage] = useState("animation");
+  
+  const handleNavigateAnimation = () => {
+    setCurrentPage("animation");
+  };
 
   return (
     <Box
@@ -59,19 +67,9 @@ export default function Landing() {
             mb: 2,
           }}
         />
-        <Typography
-          variant="h2"
-          sx={{
-            fontWeight: 800,
-            fontSize: { xs: "2rem", md: "3.5rem" },
-            background: "linear-gradient(45deg, #B8F3FF 30%, #8AC6D0 90%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            mb: 2,
-          }}
-        >
-          RocketStars
-        </Typography>
+                  <Box sx={{ mb: 6, textAlign: "center" }}>
+            <Logo size="lg" />
+        </Box>
         <Typography
           variant="h5"
           sx={{
@@ -83,7 +81,7 @@ export default function Landing() {
             fontSize: { xs: "1rem", md: "1.3rem" },
           }}
         >
-          Sistema de votação para competições de tatuagem — Otttakucon
+          Sistema de votação para competições de tatuagem — rocketStar
         </Typography>
         <Button
           variant="contained"

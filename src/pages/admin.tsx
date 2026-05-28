@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
@@ -1422,12 +1423,11 @@ export default function AdminVotacaoPage() {
                 InputLabelProps={{ sx: { color: "#8AC6D0" } }}
               />
               <TextField label="Tipo" select value={userForm.role} onChange={(e) => setUserForm((p) => ({ ...p, role: e.target.value }))} fullWidth
-                SelectProps={{ native: true }}
                 InputProps={{ sx: { color: "#B8F3FF", "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" } } }}
                 InputLabelProps={{ sx: { color: "#8AC6D0" } }}
               >
-                <option value="jurado">Jurado</option>
-                <option value="admin">Administrador</option>
+                <MenuItem value="jurado">Jurado</MenuItem>
+                <MenuItem value="admin">Administrador</MenuItem>
               </TextField>
             </Stack>
           </DialogContent>

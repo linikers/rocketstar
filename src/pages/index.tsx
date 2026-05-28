@@ -18,6 +18,8 @@ import { Header } from "@/components/Header/Header";
 import Top100 from "./Top100/Top100";
 import { SnackBarCustom } from "@/components/Snackbar/SnackBar";
 import Animation from "@/components/Animation/Animation";
+import Logo from "@/components/Logo/Logo";
+import "@fontsource/bebas-neue";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("animation");
@@ -33,9 +35,9 @@ function App() {
     setCurrentPage("top10");
   };
 
-  const handleOpenSnackBar = (message: string) => {
-    setSnackBarMessage(message);
-  };
+  // const handleOpenSnackBar = (message: string) => {
+  //   setSnackBarMessage(message);
+  // };
 
   const navigationCards = [
     {
@@ -65,33 +67,11 @@ function App() {
           }}
         >
           <Container maxWidth="lg">
-            <Box sx={{ mb: 6, textAlign: "center" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 2,
-                  mb: 2,
-                  cursor: "pointer",
-                }}
-                onClick={handleNavigateAnimation}
-              >
-                <Typography
-                  variant="h3"
-                  sx={{
-                    fontWeight: 700,
-                    color: "#B8F3FF",
-                    fontSize: { xs: "2rem", md: "3rem" },
-                    textShadow: "0 0 20px rgba(184, 243, 255, 0.3)",
-                  }}
-                >
-                  Otttakucon
-                </Typography>
-              </Box>
-              <Typography
+          <Box sx={{ mb: 6, textAlign: "center" }}>
+            <Logo onClick={handleNavigateAnimation} size="lg" />
+          <Typography
                 variant="body1"
-                sx={{ color: "#8AC6D0", opacity: 0.9 }}
+                sx={{ color: "#8AC6D0", opacity: 0.6, textAlign: "center", marginTop: 2 }}
               >
                 RocketStars - Votação e Ranking de Competidores
               </Typography>

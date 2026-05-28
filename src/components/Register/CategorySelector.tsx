@@ -56,6 +56,21 @@ export default function CategorySelector({
             value={selectedCategory}
             label="Selecione a Categoria"
             onChange={(e) => onCategoryChange(e.target.value)}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  bgcolor: "#F5F5F5",
+                  "& .MuiMenuItem-root": {
+                    color: "#1a1a1a",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.08)" },
+                    "&.Mui-selected": {
+                      bgcolor: "rgba(0, 229, 255, 0.15)",
+                      color: "#1a1a1a",
+                    },
+                  },
+                },
+              },
+            }}
             sx={{
               color: "#B8F3FF",
               "& .MuiOutlinedInput-notchedOutline": {
