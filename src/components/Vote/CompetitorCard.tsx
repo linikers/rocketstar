@@ -37,6 +37,7 @@ export default function CompetitorCard({ user }: CompetitorCardProps) {
     visualImpact: DEFAULT_SLIDER,
   });
   const [voting, setVoting] = useState(false);
+  const [voted, setVoted] = useState(false);
 
   const handleSliderChange =
     (name: string) => (event: Event, value: number | number[]) => {
@@ -65,15 +66,7 @@ export default function CompetitorCard({ user }: CompetitorCardProps) {
         throw new Error("Erro ao registrar voto");
       }
 
-      setVoteValues({
-        anatomy: DEFAULT_SLIDER,
-        creativity: DEFAULT_SLIDER,
-        pigmentation: DEFAULT_SLIDER,
-        traces: DEFAULT_SLIDER,
-        readability: DEFAULT_SLIDER,
-        visualImpact: DEFAULT_SLIDER,
-      });
-
+      setVoted(true);
       showSnackbar("Voto registrado com sucesso! 🎉");
     } catch (error) {
       console.error("Erro ao votar:", error);
@@ -121,20 +114,25 @@ export default function CompetitorCard({ user }: CompetitorCardProps) {
             >
               {user.name}
             </Typography>
-            <Typography variant="body2" sx={{ color: "#8AC6D0", opacity: 0.8, mb: 0.5 }}>
+            <Typography variant="body2" sx={{ color: "#8AC6D0", opacity: 0.8 }}>
               {user.work}
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: "#8AC6D0",
-                fontWeight: 600,
-                fontSize: "1rem",
-              }}
-            >
-              {user.category}
-            </Typography>
           </Box>
+          <Typography
+            sx={{
+              color: "#8AC6D0",
+              fontWeight: 700,
+              fontSize: "1.2rem",
+              textAlign: { xs: "left", sm: "right" },
+              py: 0.5,
+              px: 1.5,
+              borderRadius: 1,
+              border: "1px solid rgba(138, 198, 208, 0.3)",
+              background: "rgba(138, 198, 208, 0.1)",
+            }}
+          >
+            {user.category}
+          </Typography>
         </Box>
 
         {/* Critérios de Votação */}
@@ -159,14 +157,14 @@ export default function CompetitorCard({ user }: CompetitorCardProps) {
           fullWidth
           size="large"
           onClick={handleVote}
-          disabled={voting}
+          disabled={voting || voted}
           sx={{
             py: 1.5,
             fontSize: "1.1rem",
             fontWeight: 600,
           }}
         >
-          {voting ? "Enviando..." : "Confirmar Voto"}
+          {voting ? "Enviando..." : voted ? "Voto Registrado ✅" : "Confirmar Voto"}
         </Button>
       </CardContent>
     </Card>
