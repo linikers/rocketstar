@@ -2,14 +2,12 @@ import { Box, LinearProgress, Typography } from "@mui/material";
 
 interface ScoreDisplayProps {
   totalScore: number;
-  totalScoreSum: number;
 }
 
-export default function ScoreDisplay({
-  totalScore,
-  totalScoreSum,
-}: ScoreDisplayProps) {
-  const percentage = totalScoreSum > 0 ? (totalScore / totalScoreSum) * 100 : 0;
+const MAX_POSSIBLE_SCORE = 10 * 6; // 6 criterios, max 10 cada
+
+export default function ScoreDisplay({ totalScore }: ScoreDisplayProps) {
+  const percentage = (totalScore / MAX_POSSIBLE_SCORE) * 100;
 
   return (
     <Box
@@ -49,7 +47,7 @@ export default function ScoreDisplay({
           fontWeight: 600,
         }}
       >
-        {totalScore} pontos ({percentage.toFixed(2)}%)
+        {totalScore} / {MAX_POSSIBLE_SCORE} pontos
       </Typography>
     </Box>
   );
