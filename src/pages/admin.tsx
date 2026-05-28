@@ -33,6 +33,7 @@ import {
   Event as EventIcon,
   Logout as LogoutIcon,
   RocketLaunch,
+  Category as CategoryIcon,
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
@@ -41,6 +42,7 @@ import PersonalDataForm from "@/components/Register/PersonalDataForm";
 import VotingSelector from "@/components/Register/VotingSelector";
 import CategorySelector from "@/components/Register/CategorySelector";
 import RegistrationSummary from "@/components/Register/RegistrationSummary";
+import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useRouter } from "next/router";
 
 interface UserData {
@@ -56,6 +58,7 @@ export default function AdminVotacaoPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const router = useRouter();
+  const { showSnackbar } = useSnackbar();
 
   const [user, setUser] = useState<{ nome: string; email: string; role: string } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -129,10 +132,10 @@ export default function AdminVotacaoPage() {
   const [competidores, setCompetidores] = useState<any[]>([]);
   const [competidorDialogOpen, setCompetidorDialogOpen] = useState(false);
   const [categoriasDaVotacao, setCategoriasDaVotacao] = useState<string[]>([]);
+  const [selectedCategoriasCompetidor, setSelectedCategoriasCompetidor] = useState<string[]>([]);
   const [competidorForm, setCompetidorForm] = useState({
     name: "",
     work: "",
-    category: "",
     votacaoId: "",
   });
   const [loadingCompetidor, setLoadingCompetidor] = useState(false);
@@ -199,40 +202,50 @@ export default function AdminVotacaoPage() {
       const data = await res.json();
       if (data.success) {
         fetchCompetidores();
+        showSnackbar("Competidor removido", "success");
       } else {
-        alert(data.error || "Erro ao deletar");
+        showSnackbar(data.error || "Erro ao deletar", "error");
       }
     } catch (error) {
       console.error("Erro ao deletar competidor:", error);
-      alert("Erro ao deletar competidor");
+      showSnackbar("Erro ao deletar competidor", "error");
     }
   };
 
   const handleSaveCompetidor = async (e: FormEvent) => {
     e.preventDefault();
-    const { name, work, category, votacaoId } = competidorForm;
-    if (!name || !work || !category || !votacaoId) {
-      alert("Preencha todos os campos do competidor");
+    const { name, work, votacaoId } = competidorForm;
+    const categorias = selectedCategoriasCompetidor;
+    if (!name || !work || !votacaoId || categorias.length === 0) {
+      showSnackbar("Preencha todos os campos e selecione ao menos uma categoria", "warning");
       return;
     }
     setLoadingCompetidor(true);
+    let sucesso = 0;
+    let falha = 0;
     try {
-      const res = await fetch("/api/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, work, category, votacaoId }),
-      });
-      if (res.ok) {
-        setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+      for (const cat of categorias) {
+        const res = await fetch("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, work, category: cat, votacaoId }),
+        });
+        if (res.ok) sucesso++;
+        else falha++;
+      }
+      if (sucesso > 0) {
+        showSnackbar(`${sucesso} competidor(es) cadastrado(s)!`, "success");
+        setCompetidorForm((p) => ({ ...p, work: "", votacaoId: "" }));
+        setSelectedCategoriasCompetidor([]);
+        setCategoriasDaVotacao([]);
         fetchCompetidores();
-        alert("Competidor cadastrado com sucesso!");
-      } else {
-        const err = await res.json();
-        alert(err.error || "Erro ao cadastrar");
+      }
+      if (falha > 0) {
+        showSnackbar(`${falha} erro(s) ao cadastrar`, "error");
       }
     } catch (error) {
       console.error("Erro ao cadastrar competidor:", error);
-      alert("Erro ao cadastrar competidor");
+      showSnackbar("Erro ao cadastrar competidor", "error");
     } finally {
       setLoadingCompetidor(false);
     }
@@ -257,7 +270,7 @@ export default function AdminVotacaoPage() {
     const categoriasArray = selectedCategorias;
 
     if (!formState.nome || categoriasArray.length === 0) {
-      alert("Nome e pelo menos uma categoria são obrigatórios.");
+      showSnackbar("Nome e pelo menos uma categoria são obrigatórios.", "warning");
       return;
     }
 
@@ -283,10 +296,10 @@ export default function AdminVotacaoPage() {
       });
       setSelectedCategorias([]);
       fetchVotacoes();
-      alert("Votação criada com sucesso!");
+      showSnackbar("Votação criada com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao criar votação:", error);
-      alert("Erro ao criar votação.");
+      showSnackbar("Erro ao criar votação.", "error");
     }
   };
 
@@ -300,19 +313,19 @@ export default function AdminVotacaoPage() {
       });
       if (!response.ok) throw new Error("Falha ao deletar");
       fetchVotacoes();
-      alert("Votação deletada com sucesso.");
+      showSnackbar("Votação deletada com sucesso.", "success");
     } catch (error) {
-      alert("Erro ao deletar votação.");
+      showSnackbar("Erro ao deletar votação.", "error");
     }
   };
 
   const handleGenerateQRCode = async () => {
     if (validityHours <= 0) {
-      alert("A validade deve ser maior que 0 horas.");
+      showSnackbar("Validade deve ser maior que 0 horas.", "warning");
       return;
     }
     if (!jurorName.trim()) {
-      alert("Informe o nome do jurado.");
+      showSnackbar("Informe o nome do jurado.", "warning");
       return;
     }
 
@@ -327,15 +340,15 @@ export default function AdminVotacaoPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert(`QR Code gerado para ${jurorName.trim()}!`);
+        showSnackbar(`QR Code gerado para ${jurorName.trim()}!`, "success");
         setJurorName("");
         fetchQRCodes();
       } else {
-        alert(result.error || "Erro ao gerar QR Code.");
+        showSnackbar(result.error || "Erro ao gerar QR Code.", "error");
       }
     } catch (error) {
       console.error("Erro ao gerar QR Code:", error);
-      alert("Erro ao gerar QR Code.");
+      showSnackbar("Erro ao gerar QR Code.", "error");
     } finally {
       setLoadingQR(false);
     }
@@ -344,11 +357,11 @@ export default function AdminVotacaoPage() {
   // Handlers de Usuarios
   const handleSaveUser = async () => {
     if (!userForm.nome || !userForm.email) {
-      alert("Nome e email sao obrigatorios.");
+      showSnackbar("Nome e email são obrigatórios.", "warning");
       return;
     }
     if (!editingUser && !userForm.senha) {
-      alert("Senha e obrigatoria para novos usuarios.");
+      showSnackbar("Senha é obrigatória para novos usuários.", "warning");
       return;
     }
     try {
@@ -363,9 +376,10 @@ export default function AdminVotacaoPage() {
       setEditingUser(null);
       setUserForm({ nome: "", email: "", senha: "", role: "jurado" });
       fetchUsers();
+      showSnackbar("Usuário salvo com sucesso!", "success");
     } catch (error) {
       console.error("Erro ao salvar usuario:", error);
-      alert("Erro ao salvar usuario.");
+      showSnackbar("Erro ao salvar usuário.", "error");
     }
   };
 
@@ -823,7 +837,8 @@ export default function AdminVotacaoPage() {
               size="small"
               startIcon={<PersonAddIcon />}
               onClick={() => {
-                setCompetidorForm({ name: "", work: "", category: "", votacaoId: "" });
+                setCompetidorForm({ name: "", work: "", votacaoId: "" });
+                setSelectedCategoriasCompetidor([]);
                 setCategoriasDaVotacao([]);
                 setCompetidorDialogOpen(true);
               }}
@@ -911,7 +926,7 @@ export default function AdminVotacaoPage() {
           fullWidth
           PaperProps={{
             sx: {
-              background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+              background: "#2D1B36",
               border: "1px solid rgba(184, 243, 255, 0.2)",
               borderRadius: 3,
             },
@@ -944,19 +959,70 @@ export default function AdminVotacaoPage() {
                   votacoes={votacoes}
                   selectedVotacaoId={competidorForm.votacaoId}
                   onVotacaoChange={(votacaoId) => {
-                    setCompetidorForm((p) => ({ ...p, votacaoId, category: "" }));
+                    setCompetidorForm((p) => ({ ...p, votacaoId }));
+                    setSelectedCategoriasCompetidor([]);
                     const votacao = votacoes.find((v) => v._id === votacaoId);
                     setCategoriasDaVotacao(votacao?.categorias || []);
                   }}
                 />
 
-                <CategorySelector
-                  categorias={categoriasDaVotacao}
-                  selectedCategory={competidorForm.category}
-                  onCategoryChange={(category) =>
-                    setCompetidorForm((p) => ({ ...p, category }))
-                  }
-                />
+                {/* Multi-categoria com checkboxes */}
+                {categoriasDaVotacao.length > 0 && (
+                  <>
+                    <Grid item xs={12} sx={{ mt: 2 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "#B8F3FF",
+                          fontWeight: 600,
+                          mb: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        <CategoryIcon />
+                        Categorias ({selectedCategoriasCompetidor.length} selecionada(s))
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <FormGroup>
+                        <Grid container spacing={1}>
+                          {categoriasDaVotacao.map((cat) => (
+                            <Grid item xs={12} sm={6} key={cat}>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={selectedCategoriasCompetidor.includes(cat)}
+                                    onChange={() =>
+                                      setSelectedCategoriasCompetidor((prev) =>
+                                        prev.includes(cat)
+                                          ? prev.filter((c) => c !== cat)
+                                          : [...prev, cat]
+                                      )
+                                    }
+                                    size="small"
+                                    sx={{
+                                      color: "rgba(184, 243, 255, 0.5)",
+                                      "&.Mui-checked": { color: "#B8F3FF" },
+                                    }}
+                                  />
+                                }
+                                label={cat}
+                                sx={{
+                                  "& .MuiTypography-root": {
+                                    color: "#8AC6D0",
+                                    fontSize: "0.875rem",
+                                  },
+                                }}
+                              />
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </FormGroup>
+                    </Grid>
+                  </>
+                )}
 
                 <RegistrationSummary
                   name={competidorForm.name}
@@ -966,7 +1032,11 @@ export default function AdminVotacaoPage() {
                       (v) => v._id === competidorForm.votacaoId
                     )?.nome || ""
                   }
-                  category={competidorForm.category}
+                  category={
+                    selectedCategoriasCompetidor.length > 0
+                      ? `${selectedCategoriasCompetidor.length} categoria(s)`
+                      : ""
+                  }
                 />
               </Grid>
             </DialogContent>
@@ -988,7 +1058,7 @@ export default function AdminVotacaoPage() {
                 disabled={
                   !competidorForm.name ||
                   !competidorForm.votacaoId ||
-                  !competidorForm.category
+                  selectedCategoriasCompetidor.length === 0
                 }
               >
                 {loadingCompetidor ? "Cadastrando..." : "Cadastrar"}
