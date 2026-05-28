@@ -35,9 +35,9 @@ function App() {
     setCurrentPage("top10");
   };
 
-  const handleOpenSnackBar = (message: string) => {
-    setSnackBarMessage(message);
-  };
+  // const handleOpenSnackBar = (message: string) => {
+  //   setSnackBarMessage(message);
+  // };
 
   const navigationCards = [
     {
@@ -71,7 +71,7 @@ function App() {
             <Logo onClick={handleNavigateAnimation} size="lg" />
           <Typography
                 variant="body1"
-                sx={{ color: "#8AC6D0", opacity: 0.9 }}
+                sx={{ color: "#8AC6D0", opacity: 0.6, textAlign: "center", marginTop: 2 }}
               >
                 RocketStars - Votação e Ranking de Competidores
               </Typography>
