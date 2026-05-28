@@ -9,29 +9,21 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  HowToVote as VoteIcon,
   PersonAdd as RegisterIcon,
   EmojiEvents as TrophyIcon,
-  Home as HomeIcon,
 } from "@mui/icons-material";
 import Register, { IUser } from "./Register/Register";
 import { Header } from "@/components/Header/Header";
-import Vote from "./Vote/Vote";
 import Top100 from "./Top100/Top100";
 import { SnackBarCustom } from "@/components/Snackbar/SnackBar";
 import Animation from "@/components/Animation/Animation";
 
 function App() {
-  const [users, setUsers] = useState<IUser[]>([]);
   const [currentPage, setCurrentPage] = useState("animation");
   const [snackBarMessage, setSnackBarMessage] = useState("");
-  const [, setSnackBarOpen] = useState(false);
 
   const handleNavigateAnimation = () => {
     setCurrentPage("animation");
-  };
-  const handleNavigateVote = () => {
-    setCurrentPage("vote");
   };
   const handleNavigateRegister = () => {
     setCurrentPage("register");
@@ -42,17 +34,9 @@ function App() {
 
   const handleOpenSnackBar = (message: string) => {
     setSnackBarMessage(message);
-    setSnackBarOpen(true);
   };
 
   const navigationCards = [
-    {
-      title: "Vote Agora",
-      description: "Avalie os competidores",
-      icon: <VoteIcon sx={{ fontSize: 48 }} />,
-      onClick: handleNavigateVote,
-      gradient: "linear-gradient(135deg, #B8F3FF 0%, #8AC6D0 100%)",
-    },
     {
       title: "Registrar Participante",
       description: "Cadastre um novo competidor",
@@ -80,7 +64,6 @@ function App() {
           }}
         >
           <Container maxWidth="lg">
-            {/* Header */}
             <Box sx={{ mb: 6, textAlign: "center" }}>
               <Box
                 sx={{
@@ -113,7 +96,6 @@ function App() {
               </Typography>
             </Box>
 
-            {/* Animation */}
             <Box
               sx={{
                 mb: 6,
@@ -124,10 +106,9 @@ function App() {
               <Animation />
             </Box>
 
-            {/* Navigation Cards */}
-            <Grid container spacing={3}>
+            <Grid container spacing={3} justifyContent="center">
               {navigationCards.map((card, index) => (
-                <Grid item xs={12} md={4} key={index}>
+                <Grid item xs={12} md={6} key={index}>
                   <Card
                     onClick={card.onClick}
                     sx={{
@@ -221,7 +202,6 @@ function App() {
               <Header onClick={handleNavigateAnimation} />
             </Grid>
 
-            {/* Navigation Tabs */}
             <Grid
               item
               style={{ width: "100%", maxWidth: "1200px", padding: "0 1rem" }}
@@ -240,32 +220,6 @@ function App() {
                   justifyContent: "center",
                 }}
               >
-                <Button
-                  onClick={handleNavigateVote}
-                  variant={currentPage === "vote" ? "contained" : "outlined"}
-                  startIcon={<VoteIcon />}
-                  fullWidth={true}
-                  sx={{
-                    color: currentPage === "vote" ? "#36213E" : "#8AC6D0",
-                    borderColor: "rgba(184, 243, 255, 0.3)",
-                    background:
-                      currentPage === "vote"
-                        ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
-                        : "transparent",
-                    fontWeight: 600,
-                    px: 3,
-                    py: 1,
-                    "&:hover": {
-                      borderColor: "#8AC6D0",
-                      background:
-                        currentPage === "vote"
-                          ? "linear-gradient(90deg, #B8F3FF 0%, #8AC6D0 100%)"
-                          : "rgba(138, 198, 208, 0.1)",
-                    },
-                  }}
-                >
-                  Vote Agora
-                </Button>
                 <Button
                   onClick={handleNavigateRegister}
                   variant={
@@ -327,14 +281,8 @@ function App() {
               xs={12}
               style={{ display: "flex", justifyContent: "center" }}
             >
-              {currentPage === "vote" && (
-                <Vote
-                  users={users}
-                  setUsers={setUsers}
-                />
-              )}
               {currentPage === "register" && (
-                <Register onRegister={handleNavigateVote} />
+                <Register onRegister={() => setCurrentPage("animation")} />
               )}
               {currentPage === "top10" && <Top100 />}
             </Grid>

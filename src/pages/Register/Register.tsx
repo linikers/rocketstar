@@ -19,7 +19,7 @@ export interface IUser {
   pigmentation: number;
   traces: number;
   readability: number;
-  visualimpact: number;
+  visualImpact: number;
   totalScore: number;
   day: "Sexta" | "Sábado" | "Domingo";
   category: string;
