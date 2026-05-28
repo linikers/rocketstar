@@ -169,7 +169,7 @@ export default function RankingCard({ user, index }: RankingCardProps) {
             { label: "Pigmentação", value: user.pigmentation },
             { label: "Traços", value: user.traces },
             { label: "Legibilidade", value: user.readability },
-            { label: "Imp. Visual", value: user.visualimpact },
+            { label: "Imp. Visual", value: user.visualImpact },
           ].map((item) => (
             <Box
               key={item.label}
