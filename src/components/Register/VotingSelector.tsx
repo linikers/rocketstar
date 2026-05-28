@@ -51,26 +51,25 @@ export default function VotingSelector({
           >
             Selecione a votação
           </InputLabel>
-          <Select
-            value={selectedVotacaoId}
-            label="Selecione a Votação"
-            onChange={(e) => onVotacaoChange(e.target.value as string)}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  bgcolor: "#2D1B36",
-                  border: "1px solid rgba(184, 243, 255, 0.2)",
-                  "& .MuiMenuItem-root": {
-                    color: "#B8F3FF",
-                    "&:hover": { bgcolor: "rgba(184, 243, 255, 0.1)" },
-                    "&.Mui-selected": {
-                      bgcolor: "rgba(184, 243, 255, 0.15)",
-                      color: "#B8F3FF",
-                    },
+        <Select
+          value={selectedVotacaoId}
+          label="Selecione a Votação"
+          onChange={(e) => onVotacaoChange(e.target.value as string)}
+          MenuProps={{
+            PaperProps: {
+              sx: {
+                bgcolor: "#F5F5F5",
+                "& .MuiMenuItem-root": {
+                  color: "#1a1a1a",
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.08)" },
+                  "&.Mui-selected": {
+                    bgcolor: "rgba(0, 229, 255, 0.15)",
+                    color: "#1a1a1a",
                   },
                 },
               },
-            }}
+            },
+          }}
             sx={{
               color: "#B8F3FF",
               "& .MuiOutlinedInput-notchedOutline": {
