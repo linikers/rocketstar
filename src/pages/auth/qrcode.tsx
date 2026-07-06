@@ -55,7 +55,7 @@ export default function AuthQRCodePage() {
 
           setTimeout(() => {
             router.push("/Vote/Vote?code=" + code);
-          }, 3000);
+          }, 1500);
         } else if (data.error?.includes("expirado")) {
           setStatus("expirado");
           setMessage("Este QR Code expirou.");

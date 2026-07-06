@@ -11,7 +11,7 @@ const criteria = [
 
 const rules = [
   { step: "1", title: "Receba seu QR Code", desc: "O administrador entrega um QR Code único para cada jurado. Escaneie com seu celular." },
-  { step: "2", title: "Valide seu acesso", desc: "Ao escanear, o QR é validado e consumido (uso único). Você será redirecionado para a página de votação." },
+  { step: "2", title: "Valide seu acesso", desc: "Ao escanear, o QR é validado e consumido (uso único). Você será redirecionado para a página de votação. O QR é válido até o último dia do evento." },
   { step: "3", title: "Avalie cada competidor", desc: "Para cada competidor, dê notas de 0 a 10 em 6 critérios: Anatomia, Criatividade, Pigmentação, Traços, Legibilidade e Impacto Visual." },
   { step: "4", title: "Confirme o voto", desc: "Clique em 'Confirmar Voto' para registrar. Após confirmado, não é possível alterar o voto naquele competidor." },
   { step: "5", title: "Finalize sua avaliação", desc: "Após votar em todos os competidores, clique em 'Finalizar Avaliação'. Sua votação será encerrada e você será redirecionado para o ranking." },
