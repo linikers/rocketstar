@@ -196,6 +196,7 @@ export default function Vote() {
                   <Grid item xs={12} key={user._id}>
                     <CompetitorCard
                       user={user}
+                      code={code as string}
                       onVoteComplete={handleVoteComplete}
                     />
                   </Grid>

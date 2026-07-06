@@ -38,7 +38,11 @@ export default async function handler(
       });
     }
 
-    // QR valido — nao marca como usado para permitir reutilizacao
+    // QR valido — marca como usado para evitar reuso
+    qrCode.isUsed = true;
+    qrCode.usedAt = new Date();
+    await qrCode.save();
+
     return res.status(200).json({
       success: true,
       message: "QR Code validado com sucesso",
