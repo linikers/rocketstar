@@ -35,8 +35,8 @@ export default function Register({ onRegister }: IRegisterProps) {
   const [formData, setFormData] = useState({
     name: "",
     work: "",
-    category: "",
   });
+  const [categories, setCategories] = useState<string[]>([]);
   const [, setSnackbarMessage] = useState("");
   const [, setSnackbarSeverity] = useState<
     "success" | "error" | "warning" | "info"
@@ -46,11 +46,12 @@ export default function Register({ onRegister }: IRegisterProps) {
   const [votacaoSelecionadaId, setVotacaoSelecionadaId] = useState<string>("");
   const [categoriasDaVotacao, setCategoriasDaVotacao] = useState<string[]>([]);
   const [activeStep, setActiveStep] = useState(0);
+  const [saving, setSaving] = useState(false);
 
   const steps = [
     "Dados Pessoais",
     "Selecionar Votação",
-    "Selecionar Categoria",
+    "Selecionar Categorias",
   ];
 
   useEffect(() => {
@@ -77,70 +78,72 @@ export default function Register({ onRegister }: IRegisterProps) {
     const votacao = votacoes.find((v) => v._id === votacaoId);
     if (votacao) {
       setCategoriasDaVotacao(votacao.categorias);
-      setFormData((prev) => ({ ...prev, category: "" }));
+      setCategories([]);
       setActiveStep(1);
     } else {
       setCategoriasDaVotacao([]);
     }
   };
 
-  const handleCategoryChange = (categoria: string) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      category: categoria,
-    }));
-    setActiveStep(2);
+  const handleCategoriesChange = (cats: string[]) => {
+    setCategories(cats);
+    if (cats.length > 0) setActiveStep(2);
   };
 
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!votacaoSelecionadaId || !formData.category) {
-      setSnackbarMessage("Por favor, selecione uma votação e uma categoria.");
+    if (!votacaoSelecionadaId || categories.length === 0) {
+      setSnackbarMessage("Por favor, selecione uma votação e pelo menos uma categoria.");
       setSnackbarSeverity("warning");
       setSnackbarOpen(true);
       return;
     }
 
-    try {
-      const response = await fetch("/api/save", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          work: formData.work,
-          votacaoId: votacaoSelecionadaId,
-          category: formData.category,
-        }),
-      });
+    setSaving(true);
+    let successCount = 0;
+    let errorCount = 0;
 
-      if (!response.ok) {
-        const error = await response.json();
-        setSnackbarMessage(`Erro ao salvar: ${error.message}`);
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
-        return;
+    for (const category of categories) {
+      try {
+        const response = await fetch("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: formData.name,
+            work: formData.work,
+            votacaoId: votacaoSelecionadaId,
+            category,
+          }),
+        });
+
+        if (!response.ok) {
+          errorCount++;
+        } else {
+          successCount++;
+        }
+      } catch {
+        errorCount++;
       }
+    }
 
-      const savedUser = await response.json();
-      setSnackbarMessage("Registrado com sucesso!");
-      setSnackbarSeverity("success");
+    setSaving(false);
+
+    if (successCount > 0) {
+      setSnackbarMessage(
+        `Registrado em ${successCount} categoria(s)${errorCount > 0 ? ` (${errorCount} falha(s))` : ""}!`
+      );
+      setSnackbarSeverity(errorCount > 0 ? "warning" : "success");
       setSnackbarOpen(true);
       onRegister();
 
-      // Reset do formulário
-      setFormData({
-        name: "",
-        work: "",
-        category: "",
-      });
+      setFormData({ name: "", work: "" });
+      setCategories([]);
       setVotacaoSelecionadaId("");
       setCategoriasDaVotacao([]);
       setActiveStep(0);
-    } catch (error) {
-      setSnackbarMessage("Erro ao salvar");
+    } else {
+      setSnackbarMessage("Erro ao registrar. Tente novamente.");
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }
@@ -192,15 +195,15 @@ export default function Register({ onRegister }: IRegisterProps) {
 
                 <CategorySelector
                   categorias={categoriasDaVotacao}
-                  selectedCategory={formData.category}
-                  onCategoryChange={handleCategoryChange}
+                  selectedCategories={categories}
+                  onCategoriesChange={handleCategoriesChange}
                 />
 
                 <RegistrationSummary
                   name={formData.name}
                   work={formData.work}
                   votacaoNome={votacaoNome}
-                  category={formData.category}
+                  categories={categories}
                 />
 
                 <Grid item xs={12} sx={{ mt: 2 }}>
@@ -210,9 +213,10 @@ export default function Register({ onRegister }: IRegisterProps) {
                     fullWidth
                     size="large"
                     disabled={
+                      saving ||
                       !formData.name ||
                       !votacaoSelecionadaId ||
-                      !formData.category
+                      categories.length === 0
                     }
                     sx={{
                       py: 1.5,
@@ -220,7 +224,9 @@ export default function Register({ onRegister }: IRegisterProps) {
                       fontWeight: 600,
                     }}
                   >
-                    Confirmar Registro
+                    {saving
+                      ? `Registrando em ${categories.length} categoria(s)...`
+                      : `Confirmar Registro (${categories.length} categoria${categories.length > 1 ? "s" : ""})`}
                   </Button>
                 </Grid>
               </Grid>

@@ -6,16 +6,16 @@ interface RegistrationSummaryProps {
   name: string;
   work: string;
   votacaoNome: string;
-  category: string;
+  categories: string[];
 }
 
 export default function RegistrationSummary({
   name,
   work,
   votacaoNome,
-  category,
+  categories,
 }: RegistrationSummaryProps) {
-  if (!category) return null;
+  if (categories.length === 0) return null;
 
   return (
     <Grid item xs={12}>
@@ -77,18 +77,23 @@ export default function RegistrationSummary({
           </Box>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Typography variant="body2" sx={{ color: "#8AC6D0" }}>
-              Categoria:
+              Categoria(s):
             </Typography>
-            <Chip
-              label={category}
-              size="small"
-              sx={{
-                background: "rgba(138, 198, 208, 0.2)",
-                color: "#8AC6D0",
-                border: "1px solid rgba(138, 198, 208, 0.3)",
-                fontWeight: 600,
-              }}
-            />
+            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              {categories.map((cat) => (
+                <Chip
+                  key={cat}
+                  label={cat}
+                  size="small"
+                  sx={{
+                    background: "rgba(138, 198, 208, 0.2)",
+                    color: "#8AC6D0",
+                    border: "1px solid rgba(138, 198, 208, 0.3)",
+                    fontWeight: 600,
+                  }}
+                />
+              ))}
+            </Box>
           </Box>
         </Box>
       </Box>

@@ -1,25 +1,31 @@
 import {
   Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Typography,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { Category as CategoryIcon } from "@mui/icons-material";
 
 interface CategorySelectorProps {
   categorias: string[];
-  selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+  selectedCategories: string[];
+  onCategoriesChange: (categories: string[]) => void;
 }
 
 export default function CategorySelector({
   categorias,
-  selectedCategory,
-  onCategoryChange,
+  selectedCategories,
+  onCategoriesChange,
 }: CategorySelectorProps) {
   if (categorias.length === 0) return null;
+
+  const handleToggle = (categoria: string) => {
+    const next = selectedCategories.includes(categoria)
+      ? selectedCategories.filter((c) => c !== categoria)
+      : [...selectedCategories, categoria];
+    onCategoriesChange(next);
+  };
 
   return (
     <>
@@ -36,68 +42,56 @@ export default function CategorySelector({
           }}
         >
           <CategoryIcon />
-          Categoria
+          Categorias
+        </Typography>
+        <Typography sx={{ color: "#8AC6D0", fontSize: "0.85rem", mb: 2 }}>
+          Marque todas as categorias em que o competidor participará.
         </Typography>
       </Grid>
 
       <Grid item xs={12}>
-        <FormControl fullWidth>
-          <InputLabel
-            sx={{
-              color: "#8AC6D0",
-              "&.Mui-focused": {
-                color: "#B8F3FF",
-              },
-            }}
-          >
-            Selecione a Categoria
-          </InputLabel>
-          <Select
-            value={selectedCategory}
-            label="Selecione a Categoria"
-            onChange={(e) => onCategoryChange(e.target.value)}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  bgcolor: "#F5F5F5",
-                  "& .MuiMenuItem-root": {
-                    color: "#1a1a1a",
-                    "&:hover": { bgcolor: "rgba(0,0,0,0.08)" },
-                    "&.Mui-selected": {
-                      bgcolor: "rgba(0, 229, 255, 0.15)",
-                      color: "#1a1a1a",
+        <FormGroup>
+          {categorias.map((categoria) => (
+            <FormControlLabel
+              key={categoria}
+              control={
+                <Checkbox
+                  checked={selectedCategories.includes(categoria)}
+                  onChange={() => handleToggle(categoria)}
+                  sx={{
+                    color: "#8AC6D0",
+                    "&.Mui-checked": {
+                      color: "#B8F3FF",
                     },
-                  },
+                  }}
+                />
+              }
+              label={categoria}
+              sx={{
+                color: selectedCategories.includes(categoria) ? "#B8F3FF" : "#8AC6D0",
+                mb: 0.5,
+                "& .MuiFormControlLabel-label": {
+                  fontWeight: selectedCategories.includes(categoria) ? 600 : 400,
                 },
-              },
-            }}
+              }}
+            />
+          ))}
+        </FormGroup>
+      </Grid>
+
+      {selectedCategories.length > 0 && (
+        <Grid item xs={12}>
+          <Typography
             sx={{
-              color: "#B8F3FF",
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "rgba(184, 243, 255, 0.3)",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#8AC6D0",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#B8F3FF",
-              },
-              "& .MuiSvgIcon-root": {
-                color: "#8AC6D0",
-              },
+              color: "#4caf50",
+              fontSize: "0.85rem",
+              fontWeight: 500,
             }}
           >
-            <MenuItem value="">
-              <em>-- Escolha uma categoria --</em>
-            </MenuItem>
-            {categorias.map((categoria) => (
-              <MenuItem key={categoria} value={categoria}>
-                {categoria}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
+            ✅ {selectedCategories.length} categoria(s) selecionada(s)
+          </Typography>
+        </Grid>
+      )}
     </>
   );
 }

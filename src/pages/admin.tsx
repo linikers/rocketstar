@@ -1183,10 +1183,10 @@ export default function AdminVotacaoPage() {
                       (v) => v._id === competidorForm.votacaoId
                     )?.nome || ""
                   }
-                  category={
+                  categories={
                     selectedCategoriasCompetidor.length > 0
-                      ? `${selectedCategoriasCompetidor.length} categoria(s)`
-                      : ""
+                      ? selectedCategoriasCompetidor
+                      : []
                   }
                 />
               </Grid>
