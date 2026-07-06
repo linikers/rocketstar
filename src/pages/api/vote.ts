@@ -1,6 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
 import Competidor, { IVoto } from "@/models/Competidor";
+import QRCodeAuth from "@/models/QRCodeAuth";
 
 export default async function handlerVote(
   request: NextApiRequest,
@@ -14,60 +15,74 @@ export default async function handlerVote(
   try {
     const {
       competidorId,
+      code,
       anatomy, creativity, pigmentation,
       traces, readability, visualImpact
     } = request.body;
 
-    if (!competidorId) {
-      return response.status(400).json({ error: "competidorId é obrigatório." });
+    if (!competidorId || !code) {
+      return response.status(400).json({ error: "competidorId e code são obrigatórios." });
     }
 
     await dbConnect();
 
-    // Verifica se o competidor ja recebeu voto
-    const existente = await Competidor.findById(competidorId);
-    if (!existente) {
+    // Verifica se o QR code existe, é válido e não foi finalizado
+    const qrCode = await QRCodeAuth.findOne({ code });
+    if (!qrCode) {
+      return response.status(404).json({ error: "QR Code não encontrado." });
+    }
+    if (new Date() > qrCode.expiresAt) {
+      return response.status(400).json({ error: "QR Code expirado." });
+    }
+    if (qrCode.isFinished) {
+      return response.status(400).json({ error: "Votação já foi finalizada para este QR Code." });
+    }
+
+    // Busca o competidor
+    const competidor = await Competidor.findById(competidorId);
+    if (!competidor) {
       return response.status(404).json({ error: 'Competidor não encontrado.' });
     }
-    if (existente.votos && existente.votos.length > 0) {
+
+    // Verifica se este jurado já votou neste competidor
+    const jaVotou = competidor.votos?.some((v: IVoto) => v.code === code);
+    if (jaVotou) {
       return response.status(409).json({
-        error: 'Este competidor ja recebeu um voto. Não é permitido votar novamente.'
+        error: 'Você já votou neste competidor.'
       });
     }
 
+    // Valida cada nota entre 0 e 10
+    const notas = { anatomy, creativity, pigmentation, traces, readability, visualImpact };
+    for (const [key, val] of Object.entries(notas)) {
+      const nota = Number(val);
+      if (isNaN(nota) || nota < 0 || nota > 10) {
+        return response.status(400).json({
+          error: `Nota inválida em ${key}. Use valores entre 0 e 10.`
+        });
+      }
+    }
+
     const novoVoto: IVoto = {
-      // juradoId: new Types.ObjectId(juradoId), // Converte para ObjectId
-      anatomy: Number(anatomy) || 0,
-      creativity: Number(creativity) || 0,
-      pigmentation: Number(pigmentation) || 0,
-      traces: Number(traces) || 0,
-      readability: Number(readability) || 0,
-      visualImpact: Number(visualImpact) || 0,
+      code,
+      jurorName: qrCode.jurorName,
+      anatomy: Number(anatomy),
+      creativity: Number(creativity),
+      pigmentation: Number(pigmentation),
+      traces: Number(traces),
+      readability: Number(readability),
+      visualImpact: Number(visualImpact),
     };
 
-    // Usar findByIdAndUpdate com um pipeline de agregação para atomicidade e recalcular totais
+    // Adiciona voto e recalcula totais
     const updatedCompetidor = await Competidor.findByIdAndUpdate(
       competidorId,
-      [ // Início do pipeline de agregação
-        // // Passo 1: Remove o voto antigo do jurado (se existir) para garantir que não haja duplicatas.
-        // {
-        //   $set: {
-        //     votos: {
-        //       $filter: {
-        //         input: "$votos",
-        //         as: "voto",
-        //         // cond: { $ne: ["$$voto.juradoId", novoVoto.juradoId] }
-        //       }
-        //     }
-        //   }
-        // },
-        // Passo 2: Adiciona o novo voto ao array de votos.
+      [
         {
           $set: {
             votos: { $concatArrays: ["$votos", [novoVoto]] }
           }
         },
-        // Passo 3: Recalcula e atualiza os totais usando um pipeline de agregação.
         {
           $set: {
             anatomy: { $sum: '$votos.anatomy' },
@@ -87,8 +102,8 @@ export default async function handlerVote(
         }
       ],
       {
-        new: true, // Retorna o documento modificado
-        runValidators: true // Executa os validadores do esquema Mongoose
+        new: true,
+        runValidators: true
       }
     )
 

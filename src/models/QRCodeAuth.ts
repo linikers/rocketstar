@@ -9,6 +9,7 @@ export interface IQRCodeAuth extends Document {
   createdAt: Date; // Data de criação
   usedAt?: Date; // Data de uso (se foi usado)
   isUsed: boolean; // Se já foi utilizado
+  isFinished: boolean; // Se a votação foi finalizada
   validityHours: number; // Horas de validade (configurável)
   status: "valido" | "expirado" | "usado"; // Status calculado (virtual)
 }
@@ -43,6 +44,10 @@ const QRCodeAuthSchema: Schema = new Schema({
     type: Boolean,
     default: false,
     index: true,
+  },
+  isFinished: {
+    type: Boolean,
+    default: false,
   },
   validityHours: {
     type: Number,

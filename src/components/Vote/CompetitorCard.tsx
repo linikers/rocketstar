@@ -5,6 +5,7 @@ import { useSnackbar } from "@/contexts/SnackbarContext";
 
 interface CompetitorCardProps {
   user: any;
+  code: string;
   onVoteComplete?: (id: string) => void;
 }
 
@@ -19,7 +20,7 @@ const criteriaConfig = [
 
 const DEFAULT_SLIDER = 5;
 
-export default function CompetitorCard({ user, onVoteComplete }: CompetitorCardProps) {
+export default function CompetitorCard({ user, code, onVoteComplete }: CompetitorCardProps) {
   const { showSnackbar } = useSnackbar();
   const [voteValues, setVoteValues] = useState<Record<string, number>>({
     anatomy: DEFAULT_SLIDER,
@@ -52,7 +53,7 @@ export default function CompetitorCard({ user, onVoteComplete }: CompetitorCardP
       const response = await fetch("/api/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, competidorId: user._id }),
+        body: JSON.stringify({ ...payload, competidorId: user._id, code }),
       });
 
       if (!response.ok) {

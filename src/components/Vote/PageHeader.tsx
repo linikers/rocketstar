@@ -1,5 +1,5 @@
-import { Box, Typography } from "@mui/material";
-import { EmojiEvents as TrophyIcon } from "@mui/icons-material";
+import { Box, Typography, Link } from "@mui/material";
+import { EmojiEvents as TrophyIcon, InfoOutlined } from "@mui/icons-material";
 
 export default function PageHeader() {
   return (
@@ -28,9 +28,25 @@ export default function PageHeader() {
           Vote Agora
         </Typography>
       </Box>
-      <Typography variant="body1" sx={{ color: "#8AC6D0", opacity: 0.9 }}>
+      <Typography variant="body1" sx={{ color: "#8AC6D0", opacity: 0.9, mb: 1 }}>
         Avalie cada critério de 0 a 10 usando os controles deslizantes
       </Typography>
+      <Link
+        href="/voting-rules"
+        target="_blank"
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 0.5,
+          color: "#8AC6D0",
+          fontSize: "0.85rem",
+          cursor: "pointer",
+          "&:hover": { color: "#B8F3FF" },
+        }}
+      >
+        <InfoOutlined sx={{ fontSize: 16 }} />
+        Ver regras da votação
+      </Link>
     </Box>
   );
 }
