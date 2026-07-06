@@ -32,7 +32,7 @@ export default function PageHeader() {
         Avalie cada critério de 0 a 10 usando os controles deslizantes
       </Typography>
       <Link
-        href="/voting-rules"
+        href="/rules"
         target="_blank"
         sx={{
           display: "inline-flex",
