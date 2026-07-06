@@ -6,6 +6,7 @@ import './Votacao';
 // Define the interface for a single vote subdocument
 export interface IVoto {
   code: string;
+  jurorName: string;
   anatomy: number;
   creativity: number;
   pigmentation: number;
@@ -34,6 +35,7 @@ export interface ICompetidor extends Document {
 
 const VotoSchema: Schema = new Schema({
   code: { type: String, required: true },
+  jurorName: { type: String, required: true },
   anatomy: { type: Number, default: 0 },
   creativity: { type: Number, default: 0 },
   pigmentation: { type: Number, default: 0 },

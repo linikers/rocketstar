@@ -26,13 +26,16 @@ export default async function handlerVote(
 
     await dbConnect();
 
-    // Verifica se o QR code existe e é válido
+    // Verifica se o QR code existe, é válido e não foi finalizado
     const qrCode = await QRCodeAuth.findOne({ code });
     if (!qrCode) {
       return response.status(404).json({ error: "QR Code não encontrado." });
     }
     if (new Date() > qrCode.expiresAt) {
       return response.status(400).json({ error: "QR Code expirado." });
+    }
+    if (qrCode.isFinished) {
+      return response.status(400).json({ error: "Votação já foi finalizada para este QR Code." });
     }
 
     // Busca o competidor
@@ -41,7 +44,7 @@ export default async function handlerVote(
       return response.status(404).json({ error: 'Competidor não encontrado.' });
     }
 
-    // Verifica se este jurado (code) já votou neste competidor
+    // Verifica se este jurado já votou neste competidor
     const jaVotou = competidor.votos?.some((v: IVoto) => v.code === code);
     if (jaVotou) {
       return response.status(409).json({
@@ -49,14 +52,26 @@ export default async function handlerVote(
       });
     }
 
+    // Valida cada nota entre 0 e 10
+    const notas = { anatomy, creativity, pigmentation, traces, readability, visualImpact };
+    for (const [key, val] of Object.entries(notas)) {
+      const nota = Number(val);
+      if (isNaN(nota) || nota < 0 || nota > 10) {
+        return response.status(400).json({
+          error: `Nota inválida em ${key}. Use valores entre 0 e 10.`
+        });
+      }
+    }
+
     const novoVoto: IVoto = {
       code,
-      anatomy: Number(anatomy) || 0,
-      creativity: Number(creativity) || 0,
-      pigmentation: Number(pigmentation) || 0,
-      traces: Number(traces) || 0,
-      readability: Number(readability) || 0,
-      visualImpact: Number(visualImpact) || 0,
+      jurorName: qrCode.jurorName,
+      anatomy: Number(anatomy),
+      creativity: Number(creativity),
+      pigmentation: Number(pigmentation),
+      traces: Number(traces),
+      readability: Number(readability),
+      visualImpact: Number(visualImpact),
     };
 
     // Adiciona voto e recalcula totais

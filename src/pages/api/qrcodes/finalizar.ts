@@ -25,7 +25,7 @@ export default async function handler(
       return res.status(404).json({ error: "QR Code não encontrado" });
     }
 
-    qrCode.isUsed = true;
+    qrCode.isFinished = true;
     qrCode.usedAt = new Date();
     await qrCode.save();
 
