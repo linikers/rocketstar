@@ -23,13 +23,16 @@ export default async function handler(
       ]);
 
     // Métricas de QR Codes
+    // Fonte da verdade de "usado/finalizou" = isFinished (set no /finalizar).
+    // isUsed entra como fallback p/ registros legados (antes setado no validate).
+    const qrFinalizados = qrCodes.filter((q) => q.isFinished || q.isUsed).length;
     const qrValidos = qrCodes.filter(
-      (q) => !q.isUsed && q.expiresAt > now
+      (q) => !q.isFinished && !q.isUsed && q.expiresAt > now
     ).length;
-    const qrUsados = qrCodes.filter((q) => q.isUsed).length;
     const qrExpirados = qrCodes.filter(
-      (q) => !q.isUsed && q.expiresAt <= now
+      (q) => !q.isFinished && !q.isUsed && q.expiresAt <= now
     ).length;
+    const qrUsados = qrFinalizados;
 
     // Total de votos (soma de todos os votos em competidores)
     const competidores = await db

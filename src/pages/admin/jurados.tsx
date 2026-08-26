@@ -35,6 +35,7 @@ interface QRCodeData {
   code: string;
   jurorName: string;
   isUsed: boolean;
+  isFinished?: boolean;
   usedAt?: string;
   expiresAt: string;
   createdAt: string;
@@ -60,7 +61,8 @@ export default function AdminJurados() {
       if (data.success) {
         const withStatus = data.data.map((qr: QRCodeData) => {
           let status: "valido" | "expirado" | "usado";
-          if (qr.isUsed) status = "usado";
+          // Fonte da verdade de "finalizou" = isFinished (isUsed é fallback legado)
+          if (qr.isFinished || qr.isUsed) status = "usado";
           else if (new Date() > new Date(qr.expiresAt)) status = "expirado";
           else status = "valido";
           return { ...qr, status };

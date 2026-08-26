@@ -60,6 +60,10 @@ const CompetidorSchema: Schema = new Schema({
   totalScore: { type: Number, default: 0 },
 });
 
+// Guardrail: impede competidores duplicados dentro da mesma votação.
+// Um mesmo nome pode existir em votações diferentes, por isso é composto.
+CompetidorSchema.index({ name: 1, votacaoId: 1 }, { unique: true });
+
 // Exporta o modelo. Se ele já existe, usa-o; caso contrário, cria-o.
 const Competidor = mongoose.models.Competidor || mongoose.model<ICompetidor>('Competidor', CompetidorSchema);
 
