@@ -52,6 +52,11 @@ export default function AdminJurados() {
     code?: string;
     name?: string;
   }>({ open: false });
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    code?: string;
+    name?: string;
+  }>({ open: false });
 
   const fetchQRCodes = async () => {
     try {
@@ -97,6 +102,25 @@ export default function AdminJurados() {
       setResetDialog({ open: false });
     } catch (error) {
       showSnackbar("Erro ao zerar votos", "error");
+    }
+  };
+
+  const handleDeleteJurado = async () => {
+    if (!deleteDialog.code) return;
+    try {
+      const res = await fetch(
+        `/api/qrcodes/delete?code=${deleteDialog.code}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Erro ao excluir");
+      setDeleteDialog({ open: false });
+      showSnackbar(
+        `Jurado "${deleteDialog.name}" excluído (votos removidos)`,
+        "success"
+      );
+      fetchQRCodes();
+    } catch (error) {
+      showSnackbar("Erro ao excluir jurado", "error");
     }
   };
 
@@ -320,6 +344,7 @@ export default function AdminJurados() {
                               borderColor: "rgba(255, 152, 0, 0.4)",
                               color: "#ff9800",
                               fontSize: "0.75rem",
+                              mr: 1,
                               "&:hover": {
                                 borderColor: "#ff9800",
                                 background: "rgba(255, 152, 0, 0.1)",
@@ -329,6 +354,30 @@ export default function AdminJurados() {
                             Resetar votos
                           </Button>
                         )}
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() =>
+                            setDeleteDialog({
+                              open: true,
+                              code: qr.code,
+                              name: qr.jurorName,
+                            })
+                          }
+                          sx={{
+                            borderColor: "rgba(244, 67, 54, 0.4)",
+                            color: "#f44336",
+                            fontSize: "0.75rem",
+                            "&:hover": {
+                              borderColor: "#f44336",
+                              background: "rgba(244, 67, 54, 0.1)",
+                            },
+                          }}
+                        >
+                          Excluir
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -376,6 +425,48 @@ export default function AdminJurados() {
               onClick={handleResetVotos}
             >
               Sim, resetar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog de confirmacao exclusao */}
+        <Dialog
+          open={deleteDialog.open}
+          onClose={() => setDeleteDialog({ open: false })}
+          PaperProps={{
+            sx: {
+              background: "#2D1B36",
+              border: "1px solid rgba(244, 67, 54, 0.3)",
+              borderRadius: 3,
+              maxWidth: 450,
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: "#f44336", fontWeight: 600 }}>
+            Excluir jurado?
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ color: "#8AC6D0", mb: 1 }}>
+              Deseja excluir o jurado <strong>{deleteDialog.name}</strong>?
+            </Typography>
+            <Typography sx={{ color: "#f44336", fontSize: "0.85rem" }}>
+              Isso remove o QR Code e TODOS os votos já registrados por ele
+              (recalcula as notas dos competidores).
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              onClick={() => setDeleteDialog({ open: false })}
+              sx={{ color: "#8AC6D0" }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDeleteJurado}
+            >
+              Sim, excluir
             </Button>
           </DialogActions>
         </Dialog>

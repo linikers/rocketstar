@@ -63,14 +63,26 @@ export default function Top100() {
     setCategoriaSelecionada("");
   };
 
-  const sortedUsers = [...users]
-    .filter((user) => {
-      if (categoriaSelecionada && user.category !== categoriaSelecionada)
-        return false;
-      return true;
-    })
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .slice(0, 100);
+  // Filtra por categoria (quando selecionada) e ordena por totalScore.
+// No ranking GERAL (sem categoria), deduplica por NOME mantendo a melhor nota,
+// já que um competidor tem um documento por categoria (senão apareceria repetido).
+let rankingSource = [...users];
+if (categoriaSelecionada) {
+  rankingSource = rankingSource.filter(
+    (user) => user.category === categoriaSelecionada
+  );
+} else {
+  const melhorPorNome = new Map<string, (typeof users)[number]>();
+  for (const u of rankingSource) {
+    const atual = melhorPorNome.get(u.name);
+    if (!atual || u.totalScore > atual.totalScore) melhorPorNome.set(u.name, u);
+  }
+  rankingSource = Array.from(melhorPorNome.values());
+}
+
+const sortedUsers = rankingSource
+  .sort((a, b) => b.totalScore - a.totalScore)
+  .slice(0, 100);
 
   const categoriasDaVotacao =
     votacoes.find((v) => v._id === selectedVotacaoId)?.categorias || [];
