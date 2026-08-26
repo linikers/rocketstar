@@ -8,6 +8,36 @@ export default async function handler(request: NextApiRequest, response: NextApi
   try {
     await dbConnect(); // Conecta ao banco de dados
 
+    if (request.method === 'PUT') {
+      const { id } = request.query;
+      if (!id) {
+        return response.status(400).json({ error: 'ID do competidor é obrigatório' });
+      }
+
+      // Zera votos e notas do competidor (usado pelo admin em "Resetar votos")
+      const updated = await Competidor.findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            votos: [],
+            anatomy: 0,
+            creativity: 0,
+            pigmentation: 0,
+            traces: 0,
+            readability: 0,
+            visualImpact: 0,
+            totalScore: 0,
+          },
+        },
+        { new: true }
+      );
+
+      if (!updated) {
+        return response.status(404).json({ error: 'Competidor não encontrado.' });
+      }
+      return response.status(200).json({ success: true, data: updated });
+    }
+
     if (request.method === 'DELETE') {
       const { id } = request.query;
       if (!id) {
@@ -38,7 +68,11 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
         console.log('Competidor salvo com sucesso:', savedCompetidor);
         return response.status(201).json(savedCompetidor);
-      } catch (error) {
+      } catch (error: any) {
+        // Erro 11000 = conflito de índice único (mesmo nome na mesma votação)
+        if (error?.code === 11000) {
+          return response.status(409).json({ error: 'Já existe um competidor com esse nome nesta votação.' });
+        }
         console.error('Erro ao inserir competidor:', error);
         return response.status(500).json({ error: 'Erro ao cadastrar competidor.' });
       }

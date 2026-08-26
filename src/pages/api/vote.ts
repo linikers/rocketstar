@@ -2,6 +2,7 @@ import dbConnect from "@/lib/mongodb";
 import { NextApiRequest, NextApiResponse } from "next";
 import Competidor, { IVoto } from "@/models/Competidor";
 import QRCodeAuth from "@/models/QRCodeAuth";
+import Votacao from "@/models/Votacao";
 
 export default async function handlerVote(
   request: NextApiRequest,
@@ -44,12 +45,10 @@ export default async function handlerVote(
       return response.status(404).json({ error: 'Competidor não encontrado.' });
     }
 
-    // Verifica se este jurado já votou neste competidor
-    const jaVotou = competidor.votos?.some((v: IVoto) => v.code === code);
-    if (jaVotou) {
-      return response.status(409).json({
-        error: 'Você já votou neste competidor.'
-      });
+    // Guardrail: só permite votar se a votação do competidor estiver ativa
+    const votacao = await Votacao.findById(competidor.votacaoId);
+    if (!votacao || votacao.ativo !== true) {
+      return response.status(400).json({ error: 'Votação não está ativa para este competidor.' });
     }
 
     // Valida cada nota entre 0 e 10
@@ -75,8 +74,11 @@ export default async function handlerVote(
     };
 
     // Adiciona voto e recalcula totais
-    const updatedCompetidor = await Competidor.findByIdAndUpdate(
-      competidorId,
+    // Atualização atômica: a checagem de "jurado já votou" entra no filtro do
+    // update. Duas requisições simultâneas do mesmo jurado/competidor não
+    // conseguem duplicar o voto (apenas uma passa no filtro).
+    const updatedCompetidor = await Competidor.findOneAndUpdate(
+      { _id: competidorId, 'votos.code': { $ne: code } },
       [
         {
           $set: {
@@ -108,7 +110,12 @@ export default async function handlerVote(
     )
 
     if (!updatedCompetidor) {
-      return response.status(404).json({ error: 'Competidor não encontrado.' });
+      // Se o competidor existe mas o filtro não casou, é porque este jurado já votou
+      const existe = await Competidor.exists({ _id: competidorId });
+      if (!existe) {
+        return response.status(404).json({ error: 'Competidor não encontrado.' });
+      }
+      return response.status(409).json({ error: 'Você já votou neste competidor.' });
     }
 
     return response.status(200).json(updatedCompetidor);

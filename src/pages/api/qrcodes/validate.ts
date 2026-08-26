@@ -38,11 +38,17 @@ export default async function handler(
       });
     }
 
-    // QR valido — marca como usado para evitar reuso
-    qrCode.isUsed = true;
-    qrCode.usedAt = new Date();
-    await qrCode.save();
+    // Verifica se a votação já foi finalizada para este QR
+    if (qrCode.isFinished) {
+      return res.status(400).json({
+        success: false,
+        error: "QR Code já utilizado",
+      });
+    }
 
+    // QR valido. NÃO marca como usado aqui: o mesmo QR é reutilizável dentro do
+    // período de validade (72h), permitindo que o jurado volte a votar. O flag
+    // isUsed/isFinished só é marcado ao FINALIZAR a votação (POST /finalizar).
     return res.status(200).json({
       success: true,
       message: "QR Code validado com sucesso",

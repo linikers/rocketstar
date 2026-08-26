@@ -26,6 +26,7 @@ export default async function handler(
     }
 
     qrCode.isFinished = true;
+    qrCode.isUsed = true;
     qrCode.usedAt = new Date();
     await qrCode.save();
 

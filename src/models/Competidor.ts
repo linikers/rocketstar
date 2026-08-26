@@ -60,6 +60,12 @@ const CompetidorSchema: Schema = new Schema({
   totalScore: { type: Number, default: 0 },
 });
 
+// Guardrail: impede competidor duplicado na MESMA categoria da MESMA votação.
+// Como um competidor participa de várias categorias com documentos separados
+// (uma participação por categoria), o índice inclui a category: permite múltiplas
+// categorias, mas bloqueia o mesmo competidor na mesma categoria.
+CompetidorSchema.index({ name: 1, votacaoId: 1, category: 1 }, { unique: true });
+
 // Exporta o modelo. Se ele já existe, usa-o; caso contrário, cria-o.
 const Competidor = mongoose.models.Competidor || mongoose.model<ICompetidor>('Competidor', CompetidorSchema);
 
