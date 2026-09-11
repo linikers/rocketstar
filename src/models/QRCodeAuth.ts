@@ -5,10 +5,12 @@ export interface IQRCodeAuth extends Document {
   _id: string;
   code: string; // Código único do QR
   jurorName: string; // Nome do jurado
+  votacaoId?: mongoose.Types.ObjectId | null; // Evento vinculado (opcional)
   expiresAt: Date; // Data de expiração
   createdAt: Date; // Data de criação
-  usedAt?: Date; // Data de uso (se foi usado)
-  isUsed: boolean; // Se já foi utilizado
+  usedAt?: Date | null; // Data de finalização (se finalizou)
+  firstUsedAt?: Date | null; // Primeiro acesso ao link (não queima o QR)
+  isUsed: boolean; // Se já foi utilizado (setado ao finalizar)
   isFinished: boolean; // Se a votação foi finalizada
   validityHours: number; // Horas de validade (configurável)
   status: "valido" | "expirado" | "usado"; // Status calculado (virtual)
@@ -26,6 +28,16 @@ const QRCodeAuthSchema: Schema = new Schema({
     type: String,
     required: true,
   },
+  // Evento ao qual o jurado pertence. Opcional para não invalidar os QR Codes
+  // já emitidos: quando vazio, o vínculo é gravado no primeiro voto (ver
+  // src/pages/api/vote.ts). Sem esse vínculo, um jurado recebia competidores de
+  // TODOS os eventos e podia votar em outra votação.
+  votacaoId: {
+    type: Schema.Types.ObjectId,
+    ref: "Votacao",
+    default: null,
+    index: true,
+  },
   expiresAt: {
     type: Date,
     required: true,
@@ -37,6 +49,10 @@ const QRCodeAuthSchema: Schema = new Schema({
     required: true,
   },
   usedAt: {
+    type: Date,
+    default: null,
+  },
+  firstUsedAt: {
     type: Date,
     default: null,
   },
@@ -58,7 +74,7 @@ const QRCodeAuthSchema: Schema = new Schema({
 
 // Virtual para calcular o status dinamicamente
 QRCodeAuthSchema.virtual("status").get(function (this: IQRCodeAuth) {
-  if (this.isUsed) {
+  if (this.isFinished || this.isUsed) {
     return "usado";
   }
   if (new Date() > this.expiresAt) {

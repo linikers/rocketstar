@@ -1,163 +1,215 @@
-import { Card, CardContent, Typography, Box, Grid, Button } from "@mui/material";
-import { useState } from "react";
-import VotingCriteria from "./VotingCriteria";
-import { useSnackbar } from "@/contexts/SnackbarContext";
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Slider,
+  Button,
+  Box,
+  Alert,
+  CircularProgress,
+} from '@mui/material';
 
-interface CompetitorCardProps {
-  user: any;
-  code: string;
-  onVoteComplete?: (id: string) => void;
+interface IUser {
+  _id: string;
+  name: string;
+  work: string;
+  category: string;
+  votacaoId: string;
+  // Vindo do /api/list: já votou neste competidor com o code atual?
+  jaVotou?: boolean;
 }
 
-const criteriaConfig = [
-  { name: "anatomy", label: "Anatomia", icon: "🎯" },
-  { name: "creativity", label: "Criatividade", icon: "💡" },
-  { name: "pigmentation", label: "Pigmentação", icon: "🎨" },
-  { name: "traces", label: "Traços", icon: "✏️" },
-  { name: "readability", label: "Legibilidade", icon: "👁️" },
-  { name: "visualImpact", label: "Impacto Visual", icon: "⚡" },
-];
+interface CompetitorCardProps {
+  user: IUser;
+  code: string;
+  jurorToken?: string | null;
+  onVoteComplete: (userId: string) => void;
+  onError?: (mensagem: string) => void;
+}
 
-const DEFAULT_SLIDER = 5;
+const CRITERIOS = [
+  { key: 'anatomy', label: 'Anatomia' },
+  { key: 'creativity', label: 'Criatividade' },
+  { key: 'pigmentation', label: 'Pigmentação' },
+  { key: 'traces', label: 'Traços' },
+  { key: 'readability', label: 'Legibilidade' },
+  { key: 'visualImpact', label: 'Impacto Visual' },
+] as const;
 
-export default function CompetitorCard({ user, code, onVoteComplete }: CompetitorCardProps) {
-  const { showSnackbar } = useSnackbar();
-  const [voteValues, setVoteValues] = useState<Record<string, number>>({
-    anatomy: DEFAULT_SLIDER,
-    creativity: DEFAULT_SLIDER,
-    pigmentation: DEFAULT_SLIDER,
-    traces: DEFAULT_SLIDER,
-    readability: DEFAULT_SLIDER,
-    visualImpact: DEFAULT_SLIDER,
+type NotaKey = (typeof CRITERIOS)[number]['key'];
+
+export default function CompetitorCard({
+  user,
+  code,
+  jurorToken,
+  onVoteComplete,
+  onError,
+}: CompetitorCardProps) {
+  const [votos, setVotos] = useState<Record<NotaKey, number>>({
+    anatomy: 0,
+    creativity: 0,
+    pigmentation: 0,
+    traces: 0,
+    readability: 0,
+    visualImpact: 0,
   });
-  const [voting, setVoting] = useState(false);
-  const [voted, setVoted] = useState(false);
+  // Inicializa com o que o servidor informa: se este jurado já votou neste
+  // competidor, o card abre em "Voto Registrado" em vez de pedir voto de novo.
+  const [voted, setVoted] = useState(Boolean(user.jaVotou));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSliderChange =
-    (name: string) => (event: Event, value: number | number[]) => {
-      setVoteValues((prev) => ({ ...prev, [name]: value as number }));
-    };
+  // Reset dos sliders ao trocar de competidor. O Vote.tsx também passa
+  // key={user._id}, que remonta o componente; este efeito cobre o caso de o
+  // componente ser reaproveitado pelo React (era a causa do bug: o estado
+  // 'voted' ficava true para TODOS os competidores seguintes).
+  useEffect(() => {
+    setVotos({
+      anatomy: 0,
+      creativity: 0,
+      pigmentation: 0,
+      traces: 0,
+      readability: 0,
+      visualImpact: 0,
+    });
+    setVoted(Boolean(user.jaVotou));
+    setError(null);
+  }, [user._id, user.jaVotou]);
 
-  const handleVote = async () => {
-    setVoting(true);
+  const handleVotoChange = (key: NotaKey, value: number | number[]) => {
+    setVotos((prev) => ({ ...prev, [key]: value as number }));
+  };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setError(null);
+
     try {
-      const payload = {
-        anatomy: voteValues.anatomy,
-        creativity: voteValues.creativity,
-        pigmentation: voteValues.pigmentation,
-        traces: voteValues.traces,
-        readability: voteValues.readability,
-        visualImpact: voteValues.visualImpact,
-      };
-
-      const response = await fetch("/api/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, competidorId: user._id, code }),
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          competidorId: user._id,
+          code,
+          jurorToken,
+          ...votos,
+        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Erro ao registrar voto");
+      const payload = await response.json().catch(() => ({}));
+
+      if (response.ok) {
+        setVoted(true);
+        onVoteComplete(user._id);
+        return;
       }
 
-      setVoted(true);
-      onVoteComplete?.(user._id);
-      showSnackbar("Voto registrado com sucesso! 🎉");
-    } catch (error) {
-      console.error("Erro ao votar:", error);
-      showSnackbar("Erro ao registrar voto");
+      // 409 = este jurado já votou neste competidor: mantém o card consistente
+      // (não deixa o botão piscando como se o voto tivesse falhado).
+      if (response.status === 409) {
+        setVoted(true);
+        onVoteComplete(user._id);
+      }
+
+      const mensagem =
+        payload?.error ||
+        (response.status === 401
+          ? 'Sessão de jurado expirada. Abra novamente o link do QR Code.'
+          : `Erro ao registrar voto (${response.status}).`);
+
+      setError(mensagem);
+      if (onError) onError(mensagem);
+    } catch (err) {
+      const mensagem = 'Falha de conexão ao registrar o voto. Tente novamente.';
+      setError(mensagem);
+      if (onError) onError(mensagem);
     } finally {
-      setVoting(false);
+      setLoading(false);
     }
   };
 
+  const media = (
+    Object.values(votos).reduce((acc, nota) => acc + nota, 0) / CRITERIOS.length
+  ).toFixed(1);
+
   return (
-    <Card
-      sx={{
-        background: "rgba(255, 255, 255, 0.05)",
-        backdropFilter: "blur(10px)",
-        borderRadius: 3,
-        border: "1px solid rgba(184, 243, 255, 0.2)",
-        transition: "all 0.3s ease",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0 12px 32px rgba(184, 243, 255, 0.2)",
-          border: "1px solid rgba(184, 243, 255, 0.4)",
-        },
-      }}
-    >
-      <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        {/* Header do Card */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "flex-start", sm: "center" },
-            mb: 4,
-            gap: 2,
-          }}
-        >
-          <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                color: "#B8F3FF",
-                fontWeight: 700,
-                mb: 0.5,
-              }}
-            >
-              {user.name}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#8AC6D0", opacity: 0.8 }}>
-              {user.work}
-            </Typography>
-          </Box>
-          <Typography
-            sx={{
-              color: "#8AC6D0",
-              fontWeight: 700,
-              fontSize: "1.2rem",
-              textAlign: { xs: "left", sm: "right" },
-              py: 0.5,
-              px: 1.5,
-              borderRadius: 1,
-              border: "1px solid rgba(138, 198, 208, 0.3)",
-              background: "rgba(138, 198, 208, 0.1)",
-            }}
-          >
-            {user.category}
+    <Card elevation={3} sx={{ mb: 3 }}>
+      <CardContent>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
+          <Typography variant="h5" component="h2" gutterBottom>
+            {user.name}
           </Typography>
+          {voted && (
+            <Typography
+              variant="body2"
+              color="success.main"
+              sx={{ fontWeight: 600 }}
+            >
+              VOTO REGISTRADO
+            </Typography>
+          )}
         </Box>
 
-        {/* Critérios de Votação */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {criteriaConfig.map((criteria) => (
-            <Grid item xs={12} md={6} key={criteria.name}>
-              <VotingCriteria
-                criteria={criteria}
-                value={voteValues[criteria.name] as number}
-                onChange={handleSliderChange(criteria.name)}
-              />
-            </Grid>
-          ))}
-        </Grid>
+        <Typography color="text.secondary" gutterBottom>
+          Obra: {user.work}
+        </Typography>
+        <Typography color="text.secondary" gutterBottom>
+          Categoria: {user.category}
+        </Typography>
 
-        {/* Botão de Votar */}
-        <Button
-          variant="contained"
-          fullWidth
-          size="large"
-          onClick={handleVote}
-          disabled={voting || voted}
-          sx={{
-            py: 1.5,
-            fontSize: "1.1rem",
-            fontWeight: 600,
-          }}
-        >
-          {voting ? "Enviando..." : voted ? "Voto Registrado ✅" : "Confirmar Voto"}
-        </Button>
+        <Alert severity="info" sx={{ my: 2 }}>
+          Avalie de 0 a 10 em cada critério. Após confirmado, o voto não pode ser
+          alterado.
+        </Alert>
+
+        {CRITERIOS.map((criterio) => (
+          <Box key={criterio.key} mb={2}>
+            <Typography gutterBottom>
+              {criterio.label}: {votos[criterio.key]}
+            </Typography>
+            <Slider
+              value={votos[criterio.key]}
+              onChange={(_, value) => handleVotoChange(criterio.key, value)}
+              min={0}
+              max={10}
+              step={1}
+              marks
+              valueLabelDisplay="auto"
+              disabled={voted || loading}
+            />
+          </Box>
+        ))}
+
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Média: {media}
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {voted ? (
+          <Alert severity="success">
+            Você já votou neste competidor. Use &quot;Próximo&quot; para seguir.
+          </Alert>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            size="large"
+            onClick={handleSubmit}
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} /> : null}
+          >
+            {loading ? 'Registrando...' : 'CONFIRMAR VOTO'}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

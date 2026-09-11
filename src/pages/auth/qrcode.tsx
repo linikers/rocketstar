@@ -20,6 +20,9 @@ interface ValidateResponse {
   error?: string;
   data?: {
     jurorName: string;
+    jurorToken?: string;
+    votacao?: { _id: string; nome: string } | null;
+    votacoesAtivas?: { _id: string; nome: string }[];
   };
 }
 
@@ -53,12 +56,27 @@ export default function AuthQRCodePage() {
           setJurorName(data.data?.jurorName || "");
           setMessage(data.message || "QR Code validado com sucesso!");
 
+          // Guarda a sessão do jurado (exigida em /api/vote e /finalizar) e o
+          // evento do QR, para a tela de votação não pedir de novo.
+          if (data.data?.jurorToken) {
+            sessionStorage.setItem("jurorToken", data.data.jurorToken);
+          }
+          if (data.data?.votacao?._id) {
+            sessionStorage.setItem("jurorVotacaoId", data.data.votacao._id);
+          }
+
           setTimeout(() => {
             router.push("/Vote/Vote?code=" + code);
           }, 1500);
         } else if (data.error?.includes("expirado")) {
           setStatus("expirado");
           setMessage("Este QR Code expirou.");
+        } else if (/finalizad|utilizad/i.test(data.error || "")) {
+          setStatus("usado");
+          setMessage(
+            data.error ||
+              "Esta votação já foi finalizada com este QR Code."
+          );
         } else if (data.error?.includes("não encontrado")) {
           setStatus("invalido");
           setMessage("QR Code não encontrado.");

@@ -12,7 +12,11 @@ import {
   DialogActions,
   keyframes,
   LinearProgress,
-  MobileStepper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
 } from "@mui/material";
 import { KeyboardArrowLeft, KeyboardArrowRight } from "@mui/icons-material";
 import PageHeader from "@/components/Vote/PageHeader";
@@ -29,6 +33,14 @@ const float = keyframes`
 
 const confettiChars = ["🎉", "🎊", "✨", "⭐", "🏆", "🎈", "🌟", "💫"];
 
+interface VotacaoResumo {
+  _id: string;
+  nome: string;
+}
+
+const JUROR_TOKEN_KEY = "jurorToken";
+const JUROR_VOTACAO_KEY = "jurorVotacaoId";
+
 export default function Vote() {
   const { showSnackbar } = useSnackbar();
   const router = useRouter();
@@ -41,26 +53,122 @@ export default function Vote() {
   const [finalizado, setFinalizado] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
+  // Sessão do jurado (emitida pelo /api/qrcodes/validate) e evento do QR.
+  const [jurorToken, setJurorToken] = useState<string | null>(null);
+  const [votacaoId, setVotacaoId] = useState<string>("");
+  const [votacoesDisponiveis, setVotacoesDisponiveis] = useState<VotacaoResumo[]>([]);
+  const [erroValidacao, setErroValidacao] = useState<string | null>(null);
+
+  // 1) Valida o QR Code: obtém a sessão do jurado e o evento vinculado.
   useEffect(() => {
+    if (!code || typeof code !== "string") return;
+
+    let cancelado = false;
+
+    const validarCode = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch("/api/qrcodes/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (cancelado) return;
+
+        if (!response.ok || !payload?.success) {
+          const mensagem = payload?.error || "QR Code inválido.";
+          // QR já finalizado: mostra a tela de conclusão em vez de erro seco.
+          if (/finalizad|utilizad/i.test(mensagem)) {
+            setFinalizado(true);
+            return;
+          }
+          setErroValidacao(mensagem);
+          showSnackbar(mensagem);
+          return;
+        }
+
+        const { jurorToken: token, votacao, votacoesAtivas } = payload.data;
+
+        if (token) sessionStorage.setItem(JUROR_TOKEN_KEY, token);
+        setJurorToken(token ?? null);
+
+        if (votacao?._id) {
+          sessionStorage.setItem(JUROR_VOTACAO_KEY, votacao._id);
+          setVotacaoId(votacao._id);
+          return;
+        }
+
+        // QR Code emitido antes do vínculo com evento (ou sem evento definido):
+        // usa o evento mais recente se só existir um, senão pede para escolher.
+        const ativas: VotacaoResumo[] = votacoesAtivas || [];
+        if (ativas.length === 1) {
+          sessionStorage.setItem(JUROR_VOTACAO_KEY, ativas[0]._id);
+          setVotacaoId(ativas[0]._id);
+        } else if (ativas.length > 1) {
+          setVotacoesDisponiveis(ativas);
+        } else {
+          setErroValidacao(
+            "Nenhum evento ativo no momento. Avise o organizador."
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao validar QR Code:", error);
+        if (!cancelado) {
+          setErroValidacao("Não foi possível validar o QR Code. Tente novamente.");
+        }
+      } finally {
+        if (!cancelado) setLoading(false);
+      }
+    };
+
+    validarCode();
+
+    return () => {
+      cancelado = true;
+    };
+  }, [code, showSnackbar]);
+
+  // 2) Busca APENAS os competidores do evento do QR Code, e já marca os que
+  // este jurado votou (antes vinha a base inteira, de todos os eventos).
+  useEffect(() => {
+    if (!votacaoId || !code || typeof code !== "string") return;
+
+    let cancelado = false;
+
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/list");
+        const response = await fetch(
+          `/api/list?votacaoId=${encodeURIComponent(votacaoId)}&code=${encodeURIComponent(code)}`
+        );
         if (!response.ok) {
           throw new Error("Erro ao listar competidores");
         }
         const data = await response.json();
-        setUsers(data);
+        if (cancelado) return;
+
+        const lista = Array.isArray(data) ? data : [];
+        setUsers(lista);
+        setCurrentIndex(0);
+        setVotados(
+          new Set(lista.filter((u: any) => u.jaVotou).map((u: any) => u._id))
+        );
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
-        showSnackbar("Erro ao listar competidores");
+        if (!cancelado) showSnackbar("Erro ao listar competidores");
       } finally {
-        setLoading(false);
+        if (!cancelado) setLoading(false);
       }
     };
 
     fetchUsers();
-  }, [showSnackbar]);
+
+    return () => {
+      cancelado = true;
+    };
+  }, [votacaoId, code, showSnackbar]);
 
   const handleVoteComplete = useCallback((id: string) => {
     setVotados((prev) => {
@@ -99,13 +207,23 @@ export default function Vote() {
 
     if (code && typeof code === "string") {
       try {
-        await fetch("/api/qrcodes/finalizar", {
+        const response = await fetch("/api/qrcodes/finalizar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+          body: JSON.stringify({ code, jurorToken }),
         });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showSnackbar(
+            payload?.error || "Não foi possível finalizar a votação."
+          );
+          return;
+        }
       } catch (e) {
         console.error("Erro ao finalizar:", e);
+        showSnackbar("Falha de conexão ao finalizar. Tente novamente.");
+        return;
       }
     }
 
@@ -115,6 +233,69 @@ export default function Vote() {
       router.push("/Top100/Top100");
     }, 3500);
   };
+
+  if (erroValidacao)
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+          px: 2,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Alert severity="error">{erroValidacao}</Alert>
+        </Container>
+      </Box>
+    );
+
+  if (!finalizado && votacoesDisponiveis.length > 1 && !votacaoId)
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #36213E 0%, #554971 100%)",
+          px: 2,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Typography
+            variant="h5"
+            sx={{ color: "#B8F3FF", fontWeight: 700, mb: 2 }}
+          >
+            Selecione o evento que você vai avaliar
+          </Typography>
+          <FormControl fullWidth>
+            <InputLabel id="evento-label" sx={{ color: "#8AC6D0" }}>
+              Evento
+            </InputLabel>
+            <Select
+              labelId="evento-label"
+              label="Evento"
+              value=""
+              onChange={(e) => {
+                const id = e.target.value;
+                sessionStorage.setItem(JUROR_VOTACAO_KEY, id);
+                setVotacaoId(id);
+              }}
+              sx={{ background: "rgba(255,255,255,0.05)", color: "#fff" }}
+            >
+              {votacoesDisponiveis.map((v) => (
+                <MenuItem key={v._id} value={v._id}>
+                  {v.nome}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Container>
+      </Box>
+    );
 
   if (loading && users.length === 0)
     return (
@@ -184,6 +365,11 @@ export default function Vote() {
               Redirecionando para a classificação...
             </Typography>
           </Box>
+        ) : users.length === 0 ? (
+          <Alert severity="info" sx={{ mt: 3 }}>
+            Nenhum competidor cadastrado neste evento ainda. Assim que os
+            competidores forem cadastrados, eles aparecem aqui.
+          </Alert>
         ) : (
           <>
             {/* Progress bar */}
@@ -225,10 +411,15 @@ export default function Vote() {
             {currentUser && (
               <Grid container spacing={3}>
                 <Grid item xs={12}>
+                  {/* key: sem ela o React reaproveitava o card anterior e o
+                      estado "já votou" vazava para o próximo competidor. */}
                   <CompetitorCard
+                    key={currentUser._id}
                     user={currentUser}
                     code={code as string}
+                    jurorToken={jurorToken}
                     onVoteComplete={handleVoteComplete}
+                    onError={showSnackbar}
                   />
                 </Grid>
               </Grid>
@@ -258,7 +449,13 @@ export default function Vote() {
               {votados.size >= 1 && (
                 <Button
                   variant="text"
-                  onClick={() => setCurrentIndex(users.findIndex((u) => !votados.has(u._id)))}
+                  onClick={() => {
+                    const pendente = users.findIndex((u) => !votados.has(u._id));
+                    if (pendente >= 0) {
+                      setCurrentIndex(pendente);
+                      topRef.current?.scrollIntoView({ behavior: "smooth" });
+                    }
+                  }}
                   size="small"
                   sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}
                 >
@@ -268,7 +465,18 @@ export default function Vote() {
                 </Button>
               )}
 
-              {currentIndex < users.length - 1 ? (
+              {/* Finalizar tem precedência: antes o jurado precisava navegar até o
+                  último competidor para o botão aparecer. */}
+              {allVoted ? (
+                <Button
+                  variant="contained"
+                  onClick={handleFinalizar}
+                  size="small"
+                  sx={{ minWidth: { xs: 100, sm: 130 } }}
+                >
+                  Finalizar
+                </Button>
+              ) : currentIndex < users.length - 1 ? (
                 <Button
                   variant="outlined"
                   onClick={goToNext}

@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import dbConnect from "@/lib/mongodb";
 import QRCodeAuth from "@/models/QRCodeAuth";
 import Competidor from "@/models/Competidor";
+import { requireAdmin } from "@/lib/apiAuth";
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,6 +11,12 @@ export default async function handler(
   if (req.method !== "DELETE") {
     return res.status(405).json({ error: "Método não permitido" });
   }
+
+  // Excluir jurado apaga votos: rota administrativa. Antes era pública e
+  // qualquer pessoa que tivesse (ou adivinhasse) um code apagava o jurado e
+  // os votos dele.
+  const admin = requireAdmin(req, res);
+  if (!admin) return;
 
   const { code } = req.query;
   if (!code || typeof code !== "string") {
