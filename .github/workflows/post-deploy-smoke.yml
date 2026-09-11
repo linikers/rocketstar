@@ -1,0 +1,59 @@
+name: Smoke pós-deploy (produção)
+
+# Guardrail que faltava: o ci.yml é gate de CÓDIGO (lint/typecheck/build) e fica
+# verde mesmo quando o deploy não sobe. Este workflow olha para o app NO AR.
+#
+# Gatilho principal é o evento: todo push na master espera o Vercel publicar o
+# commit mergeado e falha se ele não aparecer. O cron diário é só rede de
+# segurança para deriva que não vem de push (revert manual, env var trocada,
+# deploy de outro dia) — não é o detector principal, por isso 1x/dia e não a
+# cada 15 min.
+#
+# Todos os checks são não-destrutivos (só GET + login): não escrevem no banco.
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    # 11:00 UTC = 08:00 BRT
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      # Opcional, mas recomendado: criando um Deploy Hook no Vercel
+      # (Settings -> Git -> Deploy Hooks) e salvando a URL em
+      # secrets.VERCEL_DEPLOY_HOOK_URL, o deploy passa a ser disparado pelo CI.
+      # Motivo: a integração do Vercel não reporta deployment/status no GitHub
+      # deste repo (nem no commit do merge, nem nos anteriores), então push na
+      # master NÃO garante deploy — e o smoke abaixo espera por um.
+      - name: Disparar deploy do Vercel (se o hook estiver configurado)
+        env:
+          DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "secrets.VERCEL_DEPLOY_HOOK_URL não definido — dependendo do deploy automático do Vercel"
+            exit 0
+          fi
+          curl -fsS -X POST "$DEPLOY_HOOK" -o /dev/null -w 'deploy hook: HTTP %{http_code}\n'
+
+      - name: Smoke contra produção
+        env:
+          SMOKE_BASE: https://rocket-stars.vercel.app
+          # Em push, espera exatamente o commit mergeado. Em schedule/dispatch,
+          # github.sha é o head da master — ou seja, produção também tem que ser.
+          SMOKE_EXPECTED_COMMIT: ${{ github.sha }}
+          SMOKE_WAIT_SECONDS: '600'
+          SMOKE_EXPECT_ENV: production
+          SMOKE_ADMIN_EMAIL: ${{ secrets.SMOKE_ADMIN_EMAIL }}
+          SMOKE_ADMIN_SENHA: ${{ secrets.SMOKE_ADMIN_SENHA }}
+        run: node scripts/smoke-prod.mjs
