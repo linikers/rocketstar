@@ -12,6 +12,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # O repositório não versiona mais o .env (ver SECURITY.md). Estes valores
+    # são apenas stubs: o build do Next importa os módulos mas não conecta no
+    # banco nem assina tokens.
+    env:
+      MONGODB_URI: "mongodb://127.0.0.1:27017/build-stub"
+      JWT_SECRET: "ci-only-dummy-secret"
     steps:
       - uses: actions/checkout@v5
 
