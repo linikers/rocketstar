@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getDb } from "@/lib/mongodb";
+import { requireAdmin } from "@/lib/apiAuth";
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,6 +9,10 @@ export default async function handler(
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método não permitido" });
   }
+
+  // Painel administrativo expõe contagens e métricas internas: admin-only.
+  const admin = requireAdmin(req, res);
+  if (!admin) return;
 
   try {
     const db = await getDb();
@@ -84,6 +89,6 @@ export default async function handler(
     });
   } catch (error: any) {
     console.error("Erro no dashboard:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Erro ao carregar o dashboard" });
   }
 }

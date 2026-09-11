@@ -1,11 +1,17 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { getDb } from "@/lib/mongodb";
 import { hashSenha } from "@/lib/auth";
+import { requireAdmin } from "@/lib/apiAuth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // Gestão de usuários é admin-only (antes, qualquer visitante listava os
+  // usuários e podia criar um usuário admin para si).
+  const admin = requireAdmin(req, res);
+  if (!admin) return;
+
   const db = await getDb();
 
   try {
@@ -27,6 +33,10 @@ export default async function handler(
 
       if (!nome || !email || !senha || !role) {
         return res.status(400).json({ error: "Todos os campos são obrigatórios" });
+      }
+
+      if (role !== "admin" && role !== "jurado") {
+        return res.status(400).json({ error: "Perfil inválido" });
       }
 
       const existing = await db.collection("users").findOne({ email });
@@ -82,6 +92,12 @@ export default async function handler(
         return res.status(400).json({ error: "ID é obrigatório" });
       }
 
+      if (String(_id) === String(admin.userId)) {
+        return res
+          .status(400)
+          .json({ error: "Não é possível excluir o próprio usuário logado" });
+      }
+
       const { ObjectId } = require("mongodb");
       await db.collection("users").deleteOne({
         _id: new ObjectId(_id as string),
@@ -93,6 +109,6 @@ export default async function handler(
     return res.status(405).json({ error: "Método não permitido" });
   } catch (error: any) {
     console.error("Erro em /api/users:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: "Erro ao processar usuários" });
   }
 }

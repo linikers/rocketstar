@@ -48,6 +48,7 @@ import CategorySelector from "@/components/Register/CategorySelector";
 import RegistrationSummary from "@/components/Register/RegistrationSummary";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useRouter } from "next/router";
+import { apiFetch } from "@/lib/apiClient";
 
 interface UserData {
   _id: string;
@@ -120,6 +121,9 @@ export default function AdminVotacaoPage() {
   >([]);
   const [validityHours, setValidityHours] = useState<number>(72);
   const [jurorName, setJurorName] = useState("");
+  // Evento ao qual o QR Code fica vinculado: impede que o jurado vote em
+  // competidores de outra votação (voto cruzado).
+  const [qrVotacaoId, setQrVotacaoId] = useState<string>("");
 
   // Estados para Usuarios
   const [users, setUsers] = useState<UserData[]>([]);
@@ -146,7 +150,7 @@ export default function AdminVotacaoPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users");
+      const response = await apiFetch("/api/users");
       const result = await response.json();
       if (result.success) setUsers(result.data);
     } catch (error) {
@@ -161,7 +165,7 @@ export default function AdminVotacaoPage() {
 
   const fetchDashboard = async () => {
     try {
-      const r = await fetch("/api/dashboard");
+      const r = await apiFetch("/api/dashboard");
       const d = await r.json();
       if (d.success) setDashboard(d.data);
     } catch (_) {}
@@ -169,7 +173,7 @@ export default function AdminVotacaoPage() {
 
   const fetchVotacoes = async () => {
     try {
-      const response = await fetch("/api/votacoes");
+      const response = await apiFetch("/api/votacoes");
       const data: IVotacao[] = await response.json();
       setVotacoes(data);
     } catch (error) {
@@ -179,7 +183,7 @@ export default function AdminVotacaoPage() {
 
   const fetchQRCodes = async () => {
     try {
-      const response = await fetch("/api/qrcodes/list");
+      const response = await apiFetch("/api/qrcodes/list");
       const result = await response.json();
       if (result.success) {
         setQrCodes(result.data);
@@ -191,7 +195,7 @@ export default function AdminVotacaoPage() {
 
   const fetchCompetidores = async () => {
     try {
-      const response = await fetch("/api/list");
+      const response = await apiFetch("/api/list");
       const data = await response.json();
       if (Array.isArray(data)) setCompetidores(data);
     } catch (error) {
@@ -202,7 +206,7 @@ export default function AdminVotacaoPage() {
   const handleDeleteCompetidor = async (id: string, name: string) => {
     if (!window.confirm(`Deletar competidor "${name}"?`)) return;
     try {
-      const res = await fetch(`/api/save?id=${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/save?id=${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         fetchCompetidores();
@@ -229,7 +233,7 @@ export default function AdminVotacaoPage() {
     let falha = 0;
     try {
       for (const cat of categorias) {
-        const res = await fetch("/api/save", {
+        const res = await apiFetch("/api/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, work, category: cat, votacaoId }),
@@ -279,7 +283,7 @@ export default function AdminVotacaoPage() {
     }
 
     try {
-      const response = await fetch("/api/votacoes", {
+      const response = await apiFetch("/api/votacoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -312,7 +316,7 @@ export default function AdminVotacaoPage() {
       return;
     }
     try {
-      const response = await fetch(`/api/votacoes?id=${id}`, {
+      const response = await apiFetch(`/api/votacoes?id=${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Falha ao deletar");
@@ -332,13 +336,21 @@ export default function AdminVotacaoPage() {
       showSnackbar("Informe o nome do jurado.", "warning");
       return;
     }
+    if (!qrVotacaoId) {
+      showSnackbar("Selecione o evento (votação) deste QR Code.", "warning");
+      return;
+    }
 
     setLoadingQR(true);
     try {
-      const response = await fetch("/api/qrcodes/generate", {
+      const response = await apiFetch("/api/qrcodes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ validityHours, jurorName: jurorName.trim() }),
+        body: JSON.stringify({
+          validityHours,
+          jurorName: jurorName.trim(),
+          votacaoId: qrVotacaoId,
+        }),
       });
 
       const result = await response.json();
@@ -372,9 +384,9 @@ export default function AdminVotacaoPage() {
       if (editingUser) {
         const body = { _id: editingUser._id, nome: userForm.nome, email: userForm.email, role: userForm.role };
         if (userForm.senha) Object.assign(body, { senha: userForm.senha });
-        await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        await apiFetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       } else {
-        await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(userForm) });
+        await apiFetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(userForm) });
       }
       setUserDialogOpen(false);
       setEditingUser(null);
@@ -388,7 +400,7 @@ export default function AdminVotacaoPage() {
   };
 
   const handleToggleUser = async (user: UserData) => {
-    await fetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _id: user._id, ativo: !user.ativo }) });
+    await apiFetch("/api/users", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ _id: user._id, ativo: !user.ativo }) });
     fetchUsers();
   };
 
@@ -966,7 +978,7 @@ export default function AdminVotacaoPage() {
                           ) {
                             Promise.all(
                               entries.map((e: any) =>
-                                fetch(`/api/save?id=${e._id}`, {
+                                apiFetch(`/api/save?id=${e._id}`, {
                                   method: "DELETE",
                                 })
                               )
@@ -1259,7 +1271,7 @@ export default function AdminVotacaoPage() {
                 Gerar Novo QR Code
               </Typography>
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={3}>
                   <TextField
                     label="Nome do Jurado"
                     value={jurorName}
@@ -1286,7 +1298,7 @@ export default function AdminVotacaoPage() {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={12} sm={2}>
                   <TextField
                     label="Validade (horas)"
                     type="number"
@@ -1319,6 +1331,46 @@ export default function AdminVotacaoPage() {
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
+                  <TextField
+                    select
+                    label="Evento (votação)"
+                    value={qrVotacaoId}
+                    onChange={(e) => setQrVotacaoId(e.target.value)}
+                    fullWidth
+                    required
+                    helperText="O jurado só poderá votar neste evento"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        color: "#B8F3FF",
+                        "& fieldset": {
+                          borderColor: "rgba(184, 243, 255, 0.3)",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: "#8AC6D0",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#B8F3FF",
+                        },
+                      },
+                      "& .MuiInputLabel-root": {
+                        color: "#8AC6D0",
+                      },
+                      "& .MuiFormHelperText-root": {
+                        color: "#8AC6D0",
+                        opacity: 0.7,
+                      },
+                    }}
+                  >
+                    {votacoes
+                      .filter((v) => v.ativo)
+                      .map((v) => (
+                        <MenuItem key={v._id} value={v._id}>
+                          {v.nome}
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={3}>
                   <Button
                     variant="contained"
                     onClick={handleGenerateQRCode}

@@ -29,6 +29,7 @@ import {
   Logout as LogoutIcon,
 } from "@mui/icons-material";
 import { useSnackbar } from "@/contexts/SnackbarContext";
+import { apiFetch } from "@/lib/apiClient";
 
 interface QRCodeData {
   _id: string;
@@ -61,7 +62,7 @@ export default function AdminJurados() {
   const fetchQRCodes = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/qrcodes/list");
+      const res = await apiFetch("/api/qrcodes/list");
       const data = await res.json();
       if (data.success) {
         const withStatus = data.data.map((qr: QRCodeData) => {
@@ -88,14 +89,23 @@ export default function AdminJurados() {
   const handleResetVotos = async () => {
     if (!resetDialog.code) return;
     try {
-      // Busca todos os competidores e zera votos
-      const res = await fetch("/api/list");
+      // Remove APENAS os votos deste jurado (antes zerava TODOS os competidores
+      // da base, apagando os votos dos outros jurados).
+      const res = await apiFetch("/api/list");
       const competidores = await res.json();
       if (Array.isArray(competidores) && competidores.length > 0) {
+        const codigo = resetDialog.code;
         await Promise.all(
-          competidores.map((c: any) =>
-            fetch(`/api/save?id=${c._id}`, { method: "PUT" })
-          )
+          competidores
+            .filter((c: any) =>
+              (c.votos || []).some((v: any) => v.code === codigo)
+            )
+            .map((c: any) =>
+              apiFetch(
+                `/api/save?id=${c._id}&code=${encodeURIComponent(codigo as string)}`,
+                { method: "PUT" }
+              )
+            )
         );
       }
       showSnackbar(`Votos zerados para testes do jurado "${resetDialog.name}"`, "success");
@@ -108,7 +118,7 @@ export default function AdminJurados() {
   const handleDeleteJurado = async () => {
     if (!deleteDialog.code) return;
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/qrcodes/delete?code=${deleteDialog.code}`,
         { method: "DELETE" }
       );
@@ -134,10 +144,8 @@ export default function AdminJurados() {
     });
   };
 
-  const finalizados = qrCodes.filter((q) => q.isUsed);
-  const pendentes = qrCodes.filter(
-    (q) => !q.isUsed && new Date() <= new Date(q.expiresAt)
-  );
+  const finalizados = qrCodes.filter((q) => q.status === "usado");
+  const pendentes = qrCodes.filter((q) => q.status === "valido");
 
   const authChecked = true; // Simplified since we handle auth elsewhere
 
