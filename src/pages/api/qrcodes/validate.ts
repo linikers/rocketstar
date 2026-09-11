@@ -90,10 +90,21 @@ export default async function handler(
     // Sessão do jurado: assinada com o segredo do servidor e exigida em
     // /api/vote e /api/qrcodes/finalizar. Sem ela, qualquer pessoa com o code
     // (inclusive um link vazado) votava ou queimava o QR de terceiros.
-    const jurorToken = gerarTokenJurado({
-      code: qrCode.code,
-      jurorName: qrCode.jurorName,
-    });
+    // A validade da sessão é o tempo que resta do QR Code: o jurado tem a MESMA
+    // janela (72h por padrão) para validar o link e votar — abrir hoje e voltar
+    // amanhã continua funcionando enquanto o código não expirar.
+    const segundosRestantes = Math.max(
+      300,
+      Math.floor((new Date(qrCode.expiresAt).getTime() - Date.now()) / 1000)
+    );
+
+    const jurorToken = gerarTokenJurado(
+      {
+        code: qrCode.code,
+        jurorName: qrCode.jurorName,
+      },
+      segundosRestantes
+    );
 
     return res.status(200).json({
       success: true,
@@ -101,7 +112,10 @@ export default async function handler(
       data: {
         jurorName: qrCode.jurorName,
         expiresAt: qrCode.expiresAt,
+        // janela de votação = validade do código
+        votacaoValidaAte: qrCode.expiresAt,
         jurorToken,
+        jurorTokenExpiraEmSegundos: segundosRestantes,
         votacao: votacao
           ? { _id: String(votacao._id), nome: votacao.nome, ativo: votacao.ativo }
           : null,
