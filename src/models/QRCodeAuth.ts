@@ -12,6 +12,7 @@ export interface IQRCodeAuth extends Document {
   firstUsedAt?: Date | null; // Primeiro acesso ao link (não queima o QR)
   isUsed: boolean; // Se já foi utilizado (setado ao finalizar)
   isFinished: boolean; // Se a votação foi finalizada
+  diasFinalizados: string[]; // Dias já finalizados pelo jurado (ex.: ["Sábado"])
   validityHours: number; // Horas de validade (configurável)
   status: "valido" | "expirado" | "usado"; // Status calculado (virtual)
 }
@@ -64,6 +65,12 @@ const QRCodeAuthSchema: Schema = new Schema({
   isFinished: {
     type: Boolean,
     default: false,
+  },
+  // Finalização é POR DIA: o jurado pode julgar sábado e voltar domingo com o
+  // mesmo link. isUsed/isFinished só viram true quando não sobra dia pendente.
+  diasFinalizados: {
+    type: [String],
+    default: [],
   },
   validityHours: {
     type: Number,

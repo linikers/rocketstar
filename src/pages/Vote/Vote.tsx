@@ -6,6 +6,8 @@ import {
   Container,
   Skeleton,
   Button,
+  Card,
+  CardContent,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,6 +25,7 @@ import PageHeader from "@/components/Vote/PageHeader";
 import CompetitorCard from "@/components/Vote/CompetitorCard";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { useRouter } from "next/router";
+import { DIA_OUTROS, ordenarDias } from "@/utils/categoryMap";
 
 const float = keyframes`
   0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -59,6 +62,13 @@ export default function Vote() {
   const [votacoesDisponiveis, setVotacoesDisponiveis] = useState<VotacaoResumo[]>([]);
   const [erroValidacao, setErroValidacao] = useState<string | null>(null);
 
+  // O jurado julga UM DIA por vez (Sábado/Domingo do evento). Ele escolhe o dia
+  // antes de votar, finaliza o dia e — se quiser — volta pelo mesmo link para
+  // avaliar o outro. O QR só queima quando não sobra dia pendente.
+  const [diaSelecionado, setDiaSelecionado] = useState<string | null>(null);
+  const [diasFinalizados, setDiasFinalizados] = useState<string[]>([]);
+  const [encerrouTudo, setEncerrouTudo] = useState(false);
+
   // 1) Valida o QR Code: obtém a sessão do jurado e o evento vinculado.
   useEffect(() => {
     if (!code || typeof code !== "string") return;
@@ -89,10 +99,11 @@ export default function Vote() {
           return;
         }
 
-        const { jurorToken: token, votacao, votacoesAtivas } = payload.data;
+        const { jurorToken: token, votacao, votacoesAtivas, diasFinalizados: diasJaFinalizados } = payload.data;
 
         if (token) sessionStorage.setItem(JUROR_TOKEN_KEY, token);
         setJurorToken(token ?? null);
+        if (Array.isArray(diasJaFinalizados)) setDiasFinalizados(diasJaFinalizados);
 
         if (votacao?._id) {
           sessionStorage.setItem(JUROR_VOTACAO_KEY, votacao._id);
@@ -178,14 +189,66 @@ export default function Vote() {
     });
   }, []);
 
-  const allVoted = users.length > 0 && votados.size === users.length;
-  const votedCount = votados.size;
-  const totalCount = users.length;
-  const currentUser = users[currentIndex];
+  // Dia de cada competidor (vem do /api/list, derivado da categoria).
+  const diaDoCompetidor = useCallback(
+    (u: any) => (typeof u?.dia === "string" && u.dia) || DIA_OUTROS,
+    []
+  );
+
+  // Dias do evento com a situação de cada um: quantos competidores, quantos já
+  // foram avaliados por ESTE jurado e se ele já finalizou aquele dia.
+  const diasDisponiveis = ordenarDias(
+    Array.from(new Set(users.map((u) => diaDoCompetidor(u))))
+  ).map((dia) => {
+    const doDia = users.filter((u) => diaDoCompetidor(u) === dia);
+    return {
+      dia,
+      total: doDia.length,
+      votados: doDia.filter((u) => votados.has(u._id)).length,
+      finalizado: diasFinalizados.includes(dia),
+    };
+  });
+
+  // Entra num dia já posicionando o jurado no primeiro competidor que ele ainda
+  // não avaliou (é onde ele parou da última vez).
+  const entrarNoDia = useCallback(
+    (dia: string) => {
+      const doDia = users.filter((u) => diaDoCompetidor(u) === dia);
+      const primeiroPendente = doDia.findIndex((u) => !votados.has(u._id));
+      setDiaSelecionado(dia);
+      setCurrentIndex(primeiroPendente === -1 ? 0 : primeiroPendente);
+      setFinalizado(false);
+      topRef.current?.scrollIntoView({ behavior: "smooth" });
+    },
+    [users, votados, diaDoCompetidor]
+  );
+
+  // Evento com um único dia (ou QR de evento antigo): não faz sentido pedir
+  // escolha, entra direto no dia existente.
+  useEffect(() => {
+    if (!diaSelecionado && diasDisponiveis.length === 1) {
+      entrarNoDia(diasDisponiveis[0].dia);
+    }
+  }, [diasDisponiveis, diaSelecionado, entrarNoDia]);
+
+  // A votação roda apenas sobre o dia escolhido.
+  const usersDoDia = diaSelecionado
+    ? users.filter((u) => diaDoCompetidor(u) === diaSelecionado)
+    : [];
+
+  // Outros dias que o jurado ainda pode julgar depois deste.
+  const outrosDias = diasDisponiveis
+    .filter((d) => d.dia !== diaSelecionado && !d.finalizado)
+    .map((d) => d.dia);
+
+  const votedCount = usersDoDia.filter((u) => votados.has(u._id)).length;
+  const totalCount = usersDoDia.length;
+  const allVoted = totalCount > 0 && votedCount === totalCount;
+  const currentUser = usersDoDia[currentIndex] ?? usersDoDia[0];
   const isCurrentVoted = currentUser ? votados.has(currentUser._id) : false;
 
   const goToNext = () => {
-    if (currentIndex < users.length - 1) {
+    if (currentIndex < usersDoDia.length - 1) {
       setCurrentIndex((i) => i + 1);
       topRef.current?.scrollIntoView({ behavior: "smooth" });
     }
@@ -205,33 +268,43 @@ export default function Vote() {
   const confirmarFinalizar = async () => {
     setConfirmOpen(false);
 
-    if (code && typeof code === "string") {
-      try {
-        const response = await fetch("/api/qrcodes/finalizar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, jurorToken }),
-        });
-        const payload = await response.json().catch(() => ({}));
+    if (!(code && typeof code === "string")) return;
 
-        if (!response.ok) {
-          showSnackbar(
-            payload?.error || "Não foi possível finalizar a votação."
-          );
-          return;
-        }
-      } catch (e) {
-        console.error("Erro ao finalizar:", e);
-        showSnackbar("Falha de conexão ao finalizar. Tente novamente.");
+    try {
+      const response = await fetch("/api/qrcodes/finalizar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Finaliza SÓ o dia escolhido: o link continua valendo para o outro dia.
+        body: JSON.stringify({ code, jurorToken, dia: diaSelecionado }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        showSnackbar(
+          payload?.error || "Não foi possível finalizar a votação."
+        );
         return;
       }
+
+      const data = payload?.data || {};
+      if (Array.isArray(data.diasFinalizados)) {
+        setDiasFinalizados(data.diasFinalizados);
+      }
+
+      setFinalizado(true);
+
+      // QR queimado (não sobrou dia pendente): volta para a classificação.
+      if (data.encerrado) {
+        setEncerrouTudo(true);
+        setTimeout(() => {
+          router.push("/Top100/Top100");
+        }, 5000);
+      }
+    } catch (e) {
+      console.error("Erro ao finalizar:", e);
+      showSnackbar("Falha de conexão ao finalizar. Tente novamente.");
+      return;
     }
-
-    setFinalizado(true);
-
-    setTimeout(() => {
-      router.push("/Top100/Top100");
-    }, 3500);
   };
 
   if (erroValidacao)
@@ -359,19 +432,150 @@ export default function Vote() {
                 mb: 2,
               }}
             >
-              Votação Finalizada!
+              {encerrouTudo ? "Votação Finalizada!" : `${diaSelecionado} concluído!`}
             </Typography>
             <Typography variant="h6" sx={{ color: "#8AC6D0", fontWeight: 400 }}>
-              Redirecionando para a classificação...
+              {encerrouTudo
+                ? "Redirecionando para a classificação..."
+                : `Sua avaliação de ${diaSelecionado} foi registrada.`}
             </Typography>
+            {!encerrouTudo && (
+              <Typography sx={{ color: "#8AC6D0", mt: 2, maxWidth: 560, mx: "auto" }}>
+                {outrosDias.length > 0
+                  ? `Você ainda pode voltar por este mesmo link para avaliar ${outrosDias.join(
+                      " e "
+                    )}.`
+                  : "Não há outros dias pendentes para você avaliar."}
+              </Typography>
+            )}
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                justifyContent: "center",
+                flexWrap: "wrap",
+                mt: 3,
+              }}
+            >
+              {!encerrouTudo && outrosDias.length > 0 && (
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setFinalizado(false);
+                    setDiaSelecionado(null);
+                    setCurrentIndex(0);
+                  }}
+                >
+                  Julgar outro dia
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                sx={{ color: "#8AC6D0" }}
+                onClick={() => router.push("/Top100/Top100")}
+              >
+                Ver classificação
+              </Button>
+            </Box>
           </Box>
         ) : users.length === 0 ? (
           <Alert severity="info" sx={{ mt: 3 }}>
             Nenhum competidor cadastrado neste evento ainda. Assim que os
             competidores forem cadastrados, eles aparecem aqui.
           </Alert>
+        ) : !diaSelecionado ? (
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="h4" sx={{ color: "#B8F3FF", fontWeight: 800, mb: 1 }}>
+              Qual dia você vai avaliar?
+            </Typography>
+            <Typography sx={{ color: "#8AC6D0", mb: 3 }}>
+              Escolha o dia para começar. Ao finalizar um dia, você pode voltar
+              por este mesmo link para avaliar o outro.
+            </Typography>
+            <Grid container spacing={2}>
+              {diasDisponiveis.map((d) => (
+                <Grid item xs={12} sm={6} key={d.dia}>
+                  <Card
+                    sx={{
+                      background: "rgba(255, 255, 255, 0.04)",
+                      border: "1px solid rgba(184, 243, 255, 0.15)",
+                      borderRadius: 3,
+                    }}
+                  >
+                    <CardContent>
+                      <Typography
+                        sx={{ color: "#B8F3FF", fontWeight: 700, fontSize: "1.25rem" }}
+                      >
+                        {d.dia}
+                      </Typography>
+                      <Typography
+                        sx={{ color: "#8AC6D0", fontSize: "0.9rem", mb: 2 }}
+                      >
+                        {d.total} competidor(es)
+                        {d.votados > 0 ? ` • ${d.votados} já avaliado(s)` : ""}
+                      </Typography>
+                      {d.finalizado ? (
+                        <Box>
+                          <Typography sx={{ color: "#81C784", fontWeight: 600 }}>
+                            Concluído ✓
+                          </Typography>
+                          {/* Competidor cadastrado DEPOIS de o jurado finalizar o dia
+                              ficaria sem nota se o dia não pudesse ser reaberto. */}
+                          <Button
+                            size="small"
+                            sx={{ color: "#8AC6D0", mt: 0.5, px: 0 }}
+                            onClick={() => entrarNoDia(d.dia)}
+                          >
+                            {d.votados < d.total
+                              ? `Votar os ${d.total - d.votados} que faltam`
+                              : `Reabrir ${d.dia}`}
+                          </Button>
+                        </Box>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={() => entrarNoDia(d.dia)}
+                        >
+                          Avaliar {d.dia}
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
         ) : (
           <>
+            {/* Dia que está sendo julgado + volta ao seletor de dia */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 2,
+                flexWrap: "wrap",
+                mb: 2,
+              }}
+            >
+              <Typography sx={{ color: "#B8F3FF", fontWeight: 700, fontSize: { xs: "1rem", sm: "1.15rem" } }}>
+                Avaliando: {diaSelecionado}
+              </Typography>
+              {diasDisponiveis.length > 1 && (
+                <Button
+                  size="small"
+                  variant="text"
+                  sx={{ color: "#8AC6D0" }}
+                  onClick={() => {
+                    setDiaSelecionado(null);
+                    setCurrentIndex(0);
+                  }}
+                >
+                  Trocar dia
+                </Button>
+              )}
+            </Box>
+
             {/* Progress bar */}
             <Box
               sx={{
@@ -450,7 +654,7 @@ export default function Vote() {
                 <Button
                   variant="text"
                   onClick={() => {
-                    const pendente = users.findIndex((u) => !votados.has(u._id));
+                    const pendente = usersDoDia.findIndex((u) => !votados.has(u._id));
                     if (pendente >= 0) {
                       setCurrentIndex(pendente);
                       topRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -472,35 +676,15 @@ export default function Vote() {
                   variant="contained"
                   onClick={handleFinalizar}
                   size="small"
-                  sx={{ minWidth: { xs: 100, sm: 130 } }}
+                  sx={{ minWidth: { xs: 110, sm: 150 } }}
                 >
-                  Finalizar
-                </Button>
-              ) : currentIndex < users.length - 1 ? (
-                <Button
-                  variant="outlined"
-                  onClick={goToNext}
-                  disabled={currentIndex === users.length - 1}
-                  endIcon={<KeyboardArrowRight />}
-                  size="small"
-                  sx={{ minWidth: { xs: 100, sm: 130 } }}
-                >
-                  Próximo
-                </Button>
-              ) : allVoted ? (
-                <Button
-                  variant="contained"
-                  onClick={handleFinalizar}
-                  size="small"
-                  sx={{ minWidth: { xs: 100, sm: 130 } }}
-                >
-                  Finalizar
+                  Finalizar {diaSelecionado}
                 </Button>
               ) : (
                 <Button
                   variant="outlined"
                   onClick={goToNext}
-                  disabled
+                  disabled={currentIndex >= usersDoDia.length - 1}
                   endIcon={<KeyboardArrowRight />}
                   size="small"
                   sx={{ minWidth: { xs: 100, sm: 130 } }}
@@ -539,13 +723,19 @@ export default function Vote() {
           }}
         >
           <DialogTitle sx={{ color: "#B8F3FF", fontWeight: 600 }}>
-            Finalizar Avaliação?
+            Finalizar {diaSelecionado}?
           </DialogTitle>
           <DialogContent>
             <Typography sx={{ color: "#8AC6D0" }}>
-              Você já votou em todos os competidores. Após finalizar, não será
-              possível voltar para alterar os votos.
+              Você votou nos {totalCount} competidores de {diaSelecionado}. Os
+              votos não podem ser alterados depois de finalizar.
             </Typography>
+            {outrosDias.length > 0 && (
+              <Typography sx={{ color: "#8AC6D0", mt: 2 }}>
+                Você ainda poderá voltar por este mesmo link para avaliar{" "}
+                {outrosDias.join(" e ")}.
+              </Typography>
+            )}
           </DialogContent>
           <DialogActions sx={{ p: 2, gap: 1 }}>
             <Button
