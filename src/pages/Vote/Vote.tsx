@@ -514,7 +514,8 @@ export default function Vote() {
             <Box sx={{ textAlign: "center", mt: 2 }}>
               <Typography
                 sx={{
-                  color: isCurrentVoted ? "#4caf50" : "#FFD700",
+                  // Verde mais claro: #4caf50 sobre o roxo do fundo dava 3.9:1
+                  color: isCurrentVoted ? "#81C784" : "#FFD700",
                   fontSize: "0.8rem",
                   fontWeight: 500,
                 }}
