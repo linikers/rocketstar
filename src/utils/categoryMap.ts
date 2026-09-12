@@ -1,9 +1,6 @@
 // utils/categoryMap.ts
 export const categoryToDay: Record<string, "Sexta" | "Sábado" | "Domingo"> = {
-    // Sexta
-    "Fechamento": "Sexta",
-    "Sticker/Patch/Pixel": "Sexta",
-    "Mangá": "Sexta",
+    // Sexta: sem categorias (o dia já foi encerrado)
 
     // Sábado
     "Fineline": "Sábado",
@@ -16,9 +13,10 @@ export const categoryToDay: Record<string, "Sexta" | "Sábado" | "Domingo"> = {
     "Anime retrô": "Sábado",
 
     // Domingo
-    "Pokémon": "Domingo",
+    "Cicatrizado": "Domingo",
     "Whipshading": "Domingo",
+    "Blackwork": "Domingo",
     "Colorido": "Domingo",
-    "Arte Livre": "Domingo",
-    "Artfusion": "Domingo",
+    "Realismo": "Domingo",
+    "Livre/Fusion": "Domingo",
   };
