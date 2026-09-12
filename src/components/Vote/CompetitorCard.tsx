@@ -39,6 +39,17 @@ const CRITERIOS = [
 
 type NotaKey = (typeof CRITERIOS)[number]['key'];
 
+// O tema do app é pensado para fundo escuro (text.primary = ciano claro
+// #B8F3FF). Como o card do competidor é branco, os textos e os sliders
+// precisam de cores escuras próprias — senão ficam ilegíveis (contraste
+// ~1.2:1). Valores medidos contra #fff:
+//   TEXTO_PRINCIPAL     14.5:1
+//   TEXTO_SECUNDARIO     7.8:1
+//   ACENTO (slider)      4.8:1
+const TEXTO_PRINCIPAL = '#36213E';
+const TEXTO_SECUNDARIO = '#5A4E63';
+const ACENTO = '#2F7A8A';
+
 export default function CompetitorCard({
   user,
   code,
@@ -136,10 +147,10 @@ export default function CompetitorCard({
   ).toFixed(1);
 
   return (
-    <Card elevation={3} sx={{ mb: 3 }}>
+    <Card elevation={3} sx={{ mb: 3, bgcolor: '#fff' }}>
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
-          <Typography variant="h5" component="h2" gutterBottom>
+          <Typography variant="h5" component="h2" gutterBottom sx={{ color: TEXTO_PRINCIPAL, fontWeight: 700 }}>
             {user.name}
           </Typography>
           {voted && (
@@ -153,10 +164,10 @@ export default function CompetitorCard({
           )}
         </Box>
 
-        <Typography color="text.secondary" gutterBottom>
+        <Typography gutterBottom sx={{ color: TEXTO_SECUNDARIO }}>
           Obra: {user.work}
         </Typography>
-        <Typography color="text.secondary" gutterBottom>
+        <Typography gutterBottom sx={{ color: TEXTO_SECUNDARIO }}>
           Categoria: {user.category}
         </Typography>
 
@@ -167,7 +178,7 @@ export default function CompetitorCard({
 
         {CRITERIOS.map((criterio) => (
           <Box key={criterio.key} mb={2}>
-            <Typography gutterBottom>
+            <Typography gutterBottom sx={{ color: TEXTO_PRINCIPAL, fontWeight: 600 }}>
               {criterio.label}: {votos[criterio.key]}
             </Typography>
             <Slider
@@ -179,11 +190,17 @@ export default function CompetitorCard({
               marks
               valueLabelDisplay="auto"
               disabled={voted || loading}
+              sx={{
+                color: ACENTO,
+                '& .MuiSlider-mark': { backgroundColor: TEXTO_SECUNDARIO },
+                '& .MuiSlider-markLabel': { color: TEXTO_SECUNDARIO, fontSize: '0.7rem' },
+                '& .MuiSlider-valueLabel': { backgroundColor: TEXTO_PRINCIPAL },
+              }}
             />
           </Box>
         ))}
 
-        <Typography variant="h6" sx={{ mb: 2 }}>
+        <Typography variant="h6" sx={{ mb: 2, color: TEXTO_PRINCIPAL }}>
           Média: {media}
         </Typography>
 
