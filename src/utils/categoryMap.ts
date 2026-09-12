@@ -1,26 +1,22 @@
 // utils/categoryMap.ts
 export const categoryToDay: Record<string, "Sexta" | "Sábado" | "Domingo"> = {
-    // Sexta
-    "Série de desenho P/B e cor": "Sexta",
-    "Fechamento": "Sexta",
-    "Sticker/Patch/Pixel": "Sexta",
-    "Mangá": "Sexta",
-    "Fineline": "Sexta",
-    "Old School": "Sexta",
-  
+    // Sexta: sem categorias (o dia já foi encerrado)
+
     // Sábado
+    "Fineline": "Sábado",
+    "Minitattoo": "Sábado",
+    "Old School": "Sábado",
     "Iniciante": "Sábado",
     "Aquarela": "Sábado",
-    "Ecchi/Hentai": "Sábado",
-    "Blackwork": "Sábado",
-    "Realismo": "Sábado",
-    "Comics": "Sábado",
-  
+    "Toriyama": "Sábado",
+    "Série de desenho": "Sábado",
+    "Anime retrô": "Sábado",
+
     // Domingo
-    "Pokémon": "Domingo",
+    "Cicatrizado": "Domingo",
     "Whipshading": "Domingo",
+    "Blackwork": "Domingo",
     "Colorido": "Domingo",
-    "Arte Livre": "Domingo",
-    "Artfusion": "Domingo",
+    "Realismo": "Domingo",
+    "Livre/Fusion": "Domingo",
   };
-  
