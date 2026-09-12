@@ -11,10 +11,11 @@ const criteria = [
 
 const rules = [
   { step: "1", title: "Receba seu QR Code", desc: "O administrador entrega um QR Code único para cada jurado. Escaneie com seu celular." },
-  { step: "2", title: "Valide seu acesso", desc: "Ao escanear, o QR é validado e consumido (uso único). Você será redirecionado para a página de votação. O QR é válido até o último dia do evento." },
-  { step: "3", title: "Avalie cada competidor", desc: "Para cada competidor, dê notas de 0 a 10 em 6 critérios: Anatomia, Criatividade, Pigmentação, Traços, Legibilidade e Impacto Visual." },
-  { step: "4", title: "Confirme o voto", desc: "Clique em 'Confirmar Voto' para registrar. Após confirmado, não é possível alterar o voto naquele competidor." },
-  { step: "5", title: "Finalize sua avaliação", desc: "Após votar em todos os competidores, clique em 'Finalizar Avaliação'. Sua votação será encerrada e você será redirecionado para o ranking." },
+  { step: "2", title: "Valide seu acesso", desc: "Ao escanear, o QR é validado e você entra na página de votação. O link é pessoal e vale até o último dia do evento (não é consumido no primeiro acesso)." },
+  { step: "3", title: "Escolha o dia", desc: "Selecione o dia que você vai avaliar (Sábado ou Domingo). Você julga um dia por vez e pode voltar pelo mesmo link para avaliar o outro." },
+  { step: "4", title: "Avalie cada competidor", desc: "Para cada competidor do dia escolhido, dê notas de 0 a 10 em 6 critérios: Anatomia, Criatividade, Pigmentação, Traços, Legibilidade e Impacto Visual." },
+  { step: "5", title: "Confirme o voto", desc: "Clique em 'Confirmar Voto' para registrar. Após confirmado, não é possível alterar o voto naquele competidor." },
+  { step: "6", title: "Finalize o dia", desc: "Após votar em todos os competidores daquele dia, clique em 'Finalizar <dia>'. Se houver outro dia pendente, o link continua valendo para você voltar." },
 ];
 
 export default function VotingRulesPage() {
@@ -73,8 +74,9 @@ export default function VotingRulesPage() {
               "Cada jurado pode votar APENAS UMA VEZ por competidor.",
               "As notas devem ser de 0 a 10 — não são permitidas notas fora dessa faixa.",
               "Após confirmar o voto em um competidor, não é possível alterar.",
-              "Após finalizar a avaliação, não é possível votar novamente.",
-              "O QR Code é de uso único — não compartilhe com outras pessoas.",
+              "A finalização é por dia: você pode finalizar o Sábado e voltar depois, pelo mesmo link, para avaliar o Domingo.",
+              "Depois de finalizar, não é possível alterar os votos daquele dia.",
+              "O link do QR Code é pessoal — não compartilhe com outras pessoas.",
               "Em caso de problemas, procure o administrador do evento.",
             ].map((rule, i) => (
               <Box key={i} sx={{ display: "flex", gap: 1.5, alignItems: "flex-start" }}>

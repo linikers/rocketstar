@@ -5,6 +5,7 @@ import { NextApiRequest, NextApiResponse } from "next/types";
 import mongoose from "mongoose";
 import { verificarToken } from "@/lib/auth";
 import { getBearerToken } from "@/lib/apiAuth";
+import { diaDaCategoria } from "@/utils/categoryMap";
 
 export default async function handler(request: NextApiRequest, response: NextApiResponse) {
   if (request.method !== 'GET') {
@@ -43,7 +44,12 @@ export default async function handler(request: NextApiRequest, response: NextApi
     const competidores = await Competidor.find(filter).populate('votacaoId').lean();
 
     if (isAdmin) {
-      return response.status(200).json(competidores);
+      return response.status(200).json(
+        competidores.map((competidor: any) => ({
+          ...competidor,
+          dia: diaDaCategoria(competidor.category),
+        }))
+      );
     }
 
     // Para quem NÃO é admin: remove o array de votos (que expunha o nome de
@@ -58,6 +64,9 @@ export default async function handler(request: NextApiRequest, response: NextApi
 
       return {
         ...copia,
+        // Dia derivado da categoria: a tela do jurado usa para ele escolher
+        // qual dia julgar e para liberar o Finalizar ao terminar o dia.
+        dia: diaDaCategoria(copia.category),
         jaVotou: Boolean(meuVoto),
         meuVoto: meuVoto || null,
       };

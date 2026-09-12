@@ -38,6 +38,8 @@ interface QRCodeData {
   isUsed: boolean;
   isFinished?: boolean;
   usedAt?: string;
+  // Dias que o jurado já finalizou (finalização é por dia: Sábado/Domingo).
+  diasFinalizados?: string[];
   expiresAt: string;
   createdAt: string;
   status?: "valido" | "expirado" | "usado";
@@ -293,6 +295,13 @@ export default function AdminJurados() {
                     >
                       <TableCell sx={{ color: "#B8F3FF", fontWeight: 600 }}>
                         {qr.jurorName}
+                        {qr.diasFinalizados && qr.diasFinalizados.length > 0 && (
+                          <Typography
+                            sx={{ color: "#8AC6D0", fontSize: "0.75rem", fontWeight: 400 }}
+                          >
+                            Finalizou: {qr.diasFinalizados.join(", ")}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ color: "#8AC6D0", fontSize: "0.85rem" }}>
                         {formatDate(qr.createdAt)}

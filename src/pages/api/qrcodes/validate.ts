@@ -119,6 +119,9 @@ export default async function handler(
         votacao: votacao
           ? { _id: String(votacao._id), nome: votacao.nome, ativo: votacao.ativo }
           : null,
+        // Dias que este jurado já finalizou (a tela usa para marcar "concluído"
+        // no seletor de dia e não pedir o mesmo dia duas vezes).
+        diasFinalizados: qrCode.diasFinalizados || [],
         votacoesAtivas: votacoesAtivas.map((v) => ({
           _id: String(v._id),
           nome: v.nome,
