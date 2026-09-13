@@ -81,6 +81,82 @@ export default async function handler(request: NextApiRequest, response: NextApi
       return response.status(200).json({ success: true, data: competidor });
     }
 
+    if (request.method === 'PATCH') {
+      // Edição de competidor (nome, obra, categoria) SEM tocar nos votos.
+      // Antes, corrigir um cadastro só era possível apagando e recriando — o que
+      // zerava votos e notas já dados pelos jurados.
+      const admin = requireAdmin(request, response);
+      if (!admin) return;
+
+      const { id } = request.query;
+      if (!id || typeof id !== "string" || !mongoose.isValidObjectId(id)) {
+        return response.status(400).json({ error: 'ID do competidor é obrigatório' });
+      }
+
+      const competidor = await Competidor.findById(id);
+      if (!competidor) {
+        return response.status(404).json({ error: 'Competidor não encontrado.' });
+      }
+
+      const { name, work, category } = request.body || {};
+      const atualizacao: Record<string, string> = {};
+
+      if (name !== undefined) {
+        const nome = validarTexto(name, "name");
+        if (!nome.ok) return response.status(400).json({ error: nome.erro });
+        atualizacao.name = nome.valor;
+      }
+
+      if (work !== undefined) {
+        const obra = validarTexto(work, "work");
+        if (!obra.ok) return response.status(400).json({ error: obra.erro });
+        atualizacao.work = obra.valor;
+      }
+
+      if (category !== undefined) {
+        const categoria = validarTexto(category, "category", 60);
+        if (!categoria.ok) return response.status(400).json({ error: categoria.erro });
+
+        // A categoria precisa existir na votação: digitar "Anime reto" criaria
+        // uma categoria órfã (e um dia "Outros" na tela do jurado).
+        const votacao = await Votacao.findById(competidor.votacaoId);
+        const permitidas: string[] = votacao?.categorias || [];
+        if (permitidas.length > 0 && !permitidas.includes(categoria.valor)) {
+          return response.status(400).json({
+            error: `Categoria inválida para esta votação. Disponíveis: ${permitidas.join(', ')}.`,
+          });
+        }
+
+        atualizacao.category = categoria.valor;
+      }
+
+      if (Object.keys(atualizacao).length === 0) {
+        return response.status(400).json({
+          error: 'Nada para atualizar: informe name, work ou category.',
+        });
+      }
+
+      try {
+        // $set apenas nos campos alterados: votos[], notas e totalScore ficam
+        // como estão — e um save() aqui sobrescreveria votos chegados no meio.
+        const atualizado = await Competidor.findByIdAndUpdate(
+          id,
+          { $set: atualizacao },
+          { new: true, runValidators: true }
+        );
+        return response.status(200).json({ success: true, data: atualizado });
+      } catch (error: any) {
+        // Índice único (name, votacaoId, category)
+        if (error?.code === 11000) {
+          return response.status(409).json({
+            error: 'Já existe um competidor com esse nome nesta categoria.',
+          });
+        }
+        console.error('Erro ao editar competidor:', error);
+        return response.status(500).json({ error: 'Erro ao editar competidor.' });
+      }
+    }
+
     if (request.method === 'DELETE') {
       const admin = requireAdmin(request, response);
       if (!admin) return;
@@ -151,7 +227,7 @@ export default async function handler(request: NextApiRequest, response: NextApi
       }
     }
 
-    response.setHeader("Allow", ['POST', 'PUT', 'DELETE']);
+    response.setHeader("Allow", ['POST', 'PUT', 'PATCH', 'DELETE']);
     return response.status(405).end(`Method ${request.method} Not Allowed`);
   } catch (error) {
     console.error('Erro na API handler:', error);

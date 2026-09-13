@@ -29,6 +29,7 @@ import {
 } from "@mui/material";
 import {
   Delete as DeleteIcon,
+  Edit as EditIcon,
   PersonAdd as PersonAddIcon,
   QrCode2 as QrCodeIcon,
   Event as EventIcon,
@@ -41,7 +42,7 @@ import {
 } from "@mui/icons-material";
 import React, { FormEvent, useEffect, useState } from "react";
 import QRCodeTable from "@/components/QRCode/QRCodeTable";
-import { categoryToDay } from "@/utils/categoryMap";
+import { categoryToDay, diaDaCategoria } from "@/utils/categoryMap";
 import PersonalDataForm from "@/components/Register/PersonalDataForm";
 import VotingSelector from "@/components/Register/VotingSelector";
 import CategorySelector from "@/components/Register/CategorySelector";
@@ -147,6 +148,10 @@ export default function AdminVotacaoPage() {
     votacaoId: "",
   });
   const [loadingCompetidor, setLoadingCompetidor] = useState(false);
+  // Competidor em edição (null = dialog em modo "Novo Competidor"). A edição
+  // corrige nome/obra/categoria via PATCH preservando os votos já registrados.
+  const [editingCompetidor, setEditingCompetidor] = useState<any>(null);
+  const [categoriaEdicao, setCategoriaEdicao] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -220,10 +225,98 @@ export default function AdminVotacaoPage() {
     }
   };
 
+  const abrirNovoCompetidor = () => {
+    setEditingCompetidor(null);
+    setCategoriaEdicao("");
+    setCompetidorForm({ name: "", work: "", votacaoId: "" });
+    setSelectedCategoriasCompetidor([]);
+    setCategoriasDaVotacao([]);
+    setCompetidorDialogOpen(true);
+  };
+
+  // Abre o dialog já preenchido para corrigir nome/obra/categoria de um
+  // competidor que já existe (inclusive um que já recebeu voto).
+  const abrirEdicaoCompetidor = (competidor: any) => {
+    const votacaoPopulada =
+      typeof competidor.votacaoId === "object" && competidor.votacaoId !== null;
+    const votacaoId = votacaoPopulada
+      ? String(competidor.votacaoId._id || "")
+      : String(competidor.votacaoId || "");
+
+    setEditingCompetidor(competidor);
+    setCompetidorForm({
+      name: competidor.name || "",
+      work: competidor.work || "",
+      votacaoId,
+    });
+    setCategoriasDaVotacao(
+      (votacaoPopulada && competidor.votacaoId.categorias) ||
+        votacoes.find((v) => v._id === votacaoId)?.categorias ||
+        []
+    );
+    setCategoriaEdicao(competidor.category || "");
+    setSelectedCategoriasCompetidor([]);
+    setCompetidorDialogOpen(true);
+  };
+
   const handleSaveCompetidor = async (e: FormEvent) => {
     e.preventDefault();
     const { name, work, votacaoId } = competidorForm;
     const categorias = selectedCategoriasCompetidor;
+
+    // Modo edição: um PATCH com só os campos alterados. Votos e notas do
+    // competidor continuam exatamente como estavam.
+    if (editingCompetidor) {
+      if (!name.trim() || !work.trim() || !categoriaEdicao) {
+        showSnackbar("Preencha nome, estúdio e categoria", "warning");
+        return;
+      }
+
+      const campos: Record<string, string> = {};
+      if (name !== editingCompetidor.name) campos.name = name;
+      if (work !== editingCompetidor.work) campos.work = work;
+      if (categoriaEdicao !== editingCompetidor.category) campos.category = categoriaEdicao;
+
+      if (Object.keys(campos).length === 0) {
+        showSnackbar("Nada foi alterado", "info");
+        return;
+      }
+
+      setLoadingCompetidor(true);
+      try {
+        const res = await apiFetch(`/api/save?id=${editingCompetidor._id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(campos),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const votos = Array.isArray(editingCompetidor.votos)
+            ? editingCompetidor.votos.length
+            : 0;
+          const mudouCategoria = campos.category !== undefined;
+          showSnackbar(
+            `Competidor atualizado — ${votos} voto(s) preservado(s)${
+              mudouCategoria ? ` (agora em ${campos.category})` : ""
+            }`,
+            "success"
+          );
+          setCompetidorDialogOpen(false);
+          setEditingCompetidor(null);
+          setCategoriaEdicao("");
+          fetchCompetidores();
+        } else {
+          showSnackbar(data.error || "Erro ao salvar alterações", "error");
+        }
+      } catch (error) {
+        console.error("Erro ao editar competidor:", error);
+        showSnackbar("Erro ao salvar alterações", "error");
+      } finally {
+        setLoadingCompetidor(false);
+      }
+      return;
+    }
+
     if (!name || !work || !votacaoId || categorias.length === 0) {
       showSnackbar("Preencha todos os campos e selecione ao menos uma categoria", "warning");
       return;
@@ -887,12 +980,7 @@ export default function AdminVotacaoPage() {
               variant="contained"
               size="small"
               startIcon={<PersonAddIcon />}
-              onClick={() => {
-                setCompetidorForm({ name: "", work: "", votacaoId: "" });
-                setSelectedCategoriasCompetidor([]);
-                setCategoriasDaVotacao([]);
-                setCompetidorDialogOpen(true);
-              }}
+              onClick={abrirNovoCompetidor}
             >
               Novo Competidor
             </Button>
@@ -1058,6 +1146,19 @@ export default function AdminVotacaoPage() {
                           </Typography>
                           <IconButton
                             size="small"
+                            title="Editar competidor"
+                            onClick={() => abrirEdicaoCompetidor(c)}
+                            sx={{
+                              color: "#B8F3FF",
+                              opacity: 0.6,
+                              "&:hover": { opacity: 1 },
+                              p: 0.3,
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
                             onClick={() =>
                               handleDeleteCompetidor(c._id, `${c.work} (${c.category})`)
                             }
@@ -1102,7 +1203,7 @@ export default function AdminVotacaoPage() {
               borderBottom: "1px solid rgba(184, 243, 255, 0.1)",
             }}
           >
-            Novo Competidor
+            {editingCompetidor ? "Editar Competidor" : "Novo Competidor"}
           </DialogTitle>
           <form onSubmit={handleSaveCompetidor}>
             <DialogContent sx={{ py: 3 }}>
@@ -1118,19 +1219,72 @@ export default function AdminVotacaoPage() {
                   }
                 />
 
-                <VotingSelector
-                  votacoes={votacoes}
-                  selectedVotacaoId={competidorForm.votacaoId}
-                  onVotacaoChange={(votacaoId) => {
-                    setCompetidorForm((p) => ({ ...p, votacaoId }));
-                    setSelectedCategoriasCompetidor([]);
-                    const votacao = votacoes.find((v) => v._id === votacaoId);
-                    setCategoriasDaVotacao(votacao?.categorias || []);
-                  }}
-                />
+                {editingCompetidor ? (
+                  <Grid item xs={12}>
+                    <Alert
+                      severity="info"
+                      sx={{
+                        background: "rgba(184, 243, 255, 0.08)",
+                        color: "#B8F3FF",
+                        border: "1px solid rgba(184, 243, 255, 0.2)",
+                      }}
+                    >
+                      Votação:{" "}
+                      {votacoes.find((v) => v._id === competidorForm.votacaoId)
+                        ?.nome || "-"}{" "}
+                      (não muda na edição)
+                    </Alert>
+                    <TextField
+                      select
+                      label="Categoria"
+                      value={categoriaEdicao}
+                      onChange={(e) => setCategoriaEdicao(e.target.value)}
+                      fullWidth
+                      sx={{ mt: 2 }}
+                      InputProps={{
+                        sx: {
+                          color: "#B8F3FF",
+                          "& fieldset": { borderColor: "rgba(184, 243, 255, 0.3)" },
+                          "&:hover fieldset": { borderColor: "#8AC6D0" },
+                          "&.Mui-focused fieldset": { borderColor: "#B8F3FF" },
+                        },
+                      }}
+                      InputLabelProps={{ sx: { color: "#8AC6D0" } }}
+                    >
+                      {(categoriasDaVotacao.length > 0
+                        ? categoriasDaVotacao
+                        : [categoriaEdicao]
+                      )
+                        .filter(Boolean)
+                        .map((cat) => (
+                          <MenuItem key={cat} value={cat}>
+                            {cat} — {diaDaCategoria(cat)}
+                          </MenuItem>
+                        ))}
+                    </TextField>
+                    <Typography
+                      sx={{ color: "#8AC6D0", fontSize: "0.8rem", mt: 1 }}
+                    >
+                      Trocar a categoria muda o dia em que o competidor aparece
+                      para o jurado. Os votos já registrados são mantidos.
+                    </Typography>
+                  </Grid>
+                ) : (
+                  <VotingSelector
+                    votacoes={votacoes}
+                    selectedVotacaoId={competidorForm.votacaoId}
+                    onVotacaoChange={(votacaoId) => {
+                      setCompetidorForm((p) => ({ ...p, votacaoId }));
+                      setSelectedCategoriasCompetidor([]);
+                      const votacao = votacoes.find((v) => v._id === votacaoId);
+                      setCategoriasDaVotacao(votacao?.categorias || []);
+                    }}
+                  />
+                )}
 
-                {/* Multi-categoria com checkboxes */}
-                {categoriasDaVotacao.length > 0 && (
+                {/* Multi-categoria com checkboxes (só no cadastro: um competidor
+                    tem UMA categoria, e na edição ela é um select único) */}
+                {!editingCompetidor && categoriasDaVotacao.length > 0 && (
                   <>
                     <Grid item xs={12} sx={{ mt: 2 }}>
                       <Typography
@@ -1196,7 +1350,11 @@ export default function AdminVotacaoPage() {
                     )?.nome || ""
                   }
                   categories={
-                    selectedCategoriasCompetidor.length > 0
+                    editingCompetidor
+                      ? categoriaEdicao
+                        ? [categoriaEdicao]
+                        : []
+                      : selectedCategoriasCompetidor.length > 0
                       ? selectedCategoriasCompetidor
                       : []
                   }
@@ -1219,12 +1377,22 @@ export default function AdminVotacaoPage() {
                 type="submit"
                 variant="contained"
                 disabled={
-                  !competidorForm.name ||
-                  !competidorForm.votacaoId ||
-                  selectedCategoriasCompetidor.length === 0
+                  editingCompetidor
+                    ? !competidorForm.name ||
+                      !competidorForm.work ||
+                      !categoriaEdicao
+                    : !competidorForm.name ||
+                      !competidorForm.votacaoId ||
+                      selectedCategoriasCompetidor.length === 0
                 }
               >
-                {loadingCompetidor ? "Cadastrando..." : "Cadastrar"}
+                {loadingCompetidor
+                  ? editingCompetidor
+                    ? "Salvando..."
+                    : "Cadastrando..."
+                  : editingCompetidor
+                  ? "Salvar alterações"
+                  : "Cadastrar"}
               </Button>
             </DialogActions>
           </form>
