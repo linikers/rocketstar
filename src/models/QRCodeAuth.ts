@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+// Cada rota /api do Next roda como uma lambda isolada no Vercel: o populate de
+// `votacaoId` (ref "Votacao") precisa do modelo registrado NESTE bundle, senão
+// o mongoose lança MissingSchemaError e a rota morre com 500. Mesmo padrão de
+// registro usado no Competidor.ts. Sem isso, GET /api/qrcodes/list respondia
+// 500 e o painel de Jurados do admin abria vazio.
+import "./Votacao";
+
 // Interface para o documento QRCodeAuth
 export interface IQRCodeAuth extends Document {
   _id: string;
