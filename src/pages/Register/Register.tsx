@@ -9,6 +9,9 @@ import CategorySelector from "@/components/Register/CategorySelector";
 import RegistrationSummary from "@/components/Register/RegistrationSummary";
 
 export interface IUser {
+  // A API (/api/list) devolve o documento do Mongo com `_id`; `id` é legado do
+  // fluxo antigo de localStorage. Use `_id` como key ao renderizar a lista.
+  _id?: string;
   id: string;
   name: string;
   work: string;
