@@ -8,6 +8,7 @@ import {
   Box,
   Alert,
   CircularProgress,
+  Stack,
 } from '@mui/material';
 
 interface IUser {
@@ -18,6 +19,8 @@ interface IUser {
   votacaoId: string;
   // Vindo do /api/list: já votou neste competidor com o code atual?
   jaVotou?: boolean;
+  // Notas que ESTE jurado já deu (o /api/list só devolve o voto do próprio code).
+  meuVoto?: Record<string, number> | null;
 }
 
 interface CompetitorCardProps {
@@ -26,6 +29,9 @@ interface CompetitorCardProps {
   jurorToken?: string | null;
   onVoteComplete: (userId: string) => void;
   onError?: (mensagem: string) => void;
+  onSaved?: (mensagem: string) => void;
+  // O jurado pode corrigir o próprio voto? (dia ainda não finalizado)
+  podeAlterar?: boolean;
 }
 
 const CRITERIOS = [
@@ -38,6 +44,26 @@ const CRITERIOS = [
 ] as const;
 
 type NotaKey = (typeof CRITERIOS)[number]['key'];
+
+const NOTAS_ZERO: Record<NotaKey, number> = {
+  anatomy: 0,
+  creativity: 0,
+  pigmentation: 0,
+  traces: 0,
+  readability: 0,
+  visualImpact: 0,
+};
+
+// Notas salvas do próprio jurado -> estado dos sliders (default 0).
+function notasDoUsuario(meuVoto?: Record<string, number> | null): Record<NotaKey, number> {
+  const base = { ...NOTAS_ZERO };
+  if (!meuVoto) return base;
+  for (const criterio of CRITERIOS) {
+    const valor = meuVoto[criterio.key];
+    if (typeof valor === 'number') base[criterio.key] = valor;
+  }
+  return base;
+}
 
 // O tema do app é pensado para fundo escuro (text.primary = ciano claro
 // #B8F3FF). Como o card do competidor é branco, os textos e os sliders
@@ -56,43 +82,43 @@ export default function CompetitorCard({
   jurorToken,
   onVoteComplete,
   onError,
+  onSaved,
+  podeAlterar = false,
 }: CompetitorCardProps) {
-  const [votos, setVotos] = useState<Record<NotaKey, number>>({
-    anatomy: 0,
-    creativity: 0,
-    pigmentation: 0,
-    traces: 0,
-    readability: 0,
-    visualImpact: 0,
-  });
+  const [votos, setVotos] = useState<Record<NotaKey, number>>(() =>
+    notasDoUsuario(user.meuVoto)
+  );
   // Inicializa com o que o servidor informa: se este jurado já votou neste
   // competidor, o card abre em "Voto Registrado" em vez de pedir voto de novo.
   const [voted, setVoted] = useState(Boolean(user.jaVotou));
+  // Correção do próprio voto: destrava os sliders com as notas já salvas.
+  const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Nota toda em zero é aceita pelo servidor (0 é nota válida, de 0 a 10). Como
+  // o slider começa em 0, um toque apressado registrava 0 em tudo sem aviso:
+  // aqui pede uma confirmação extra.
+  const [confirmandoZero, setConfirmandoZero] = useState(false);
 
   // Reset dos sliders ao trocar de competidor. O Vote.tsx também passa
   // key={user._id}, que remonta o componente; este efeito cobre o caso de o
   // componente ser reaproveitado pelo React (era a causa do bug: o estado
   // 'voted' ficava true para TODOS os competidores seguintes).
   useEffect(() => {
-    setVotos({
-      anatomy: 0,
-      creativity: 0,
-      pigmentation: 0,
-      traces: 0,
-      readability: 0,
-      visualImpact: 0,
-    });
+    setVotos(notasDoUsuario(user.meuVoto));
     setVoted(Boolean(user.jaVotou));
+    setEditando(false);
+    setConfirmandoZero(false);
     setError(null);
-  }, [user._id, user.jaVotou]);
+  }, [user._id, user.jaVotou, user.meuVoto]);
 
   const handleVotoChange = (key: NotaKey, value: number | number[]) => {
     setVotos((prev) => ({ ...prev, [key]: value as number }));
   };
 
-  const handleSubmit = async () => {
+  const todasZero = CRITERIOS.every((c) => votos[c.key] === 0);
+
+  const enviarVoto = async () => {
     setLoading(true);
     setError(null);
 
@@ -114,15 +140,13 @@ export default function CompetitorCard({
 
       if (response.ok) {
         setVoted(true);
+        setEditando(false);
+        setConfirmandoZero(false);
         onVoteComplete(user._id);
+        if (payload?.atualizado && onSaved) {
+          onSaved('Voto atualizado com sucesso.');
+        }
         return;
-      }
-
-      // 409 = este jurado já votou neste competidor: mantém o card consistente
-      // (não deixa o botão piscando como se o voto tivesse falhado).
-      if (response.status === 409) {
-        setVoted(true);
-        onVoteComplete(user._id);
       }
 
       const mensagem =
@@ -142,9 +166,27 @@ export default function CompetitorCard({
     }
   };
 
+  const handleSubmit = () => {
+    // Primeiro clique com tudo zerado: pede confirmação em vez de gravar 0.
+    if (!voted && todasZero && !confirmandoZero) {
+      setConfirmandoZero(true);
+      return;
+    }
+    enviarVoto();
+  };
+
+  const cancelarEdicao = () => {
+    setVotos(notasDoUsuario(user.meuVoto));
+    setEditando(false);
+    setConfirmandoZero(false);
+    setError(null);
+  };
+
   const media = (
     Object.values(votos).reduce((acc, nota) => acc + nota, 0) / CRITERIOS.length
   ).toFixed(1);
+
+  const slidersTravados = loading || (voted && !editando);
 
   return (
     <Card elevation={3} sx={{ mb: 3, bgcolor: '#fff' }}>
@@ -159,7 +201,7 @@ export default function CompetitorCard({
               color="success.main"
               sx={{ fontWeight: 600 }}
             >
-              VOTO REGISTRADO
+              {editando ? 'CORRIGINDO VOTO' : 'VOTO REGISTRADO'}
             </Typography>
           )}
         </Box>
@@ -172,8 +214,11 @@ export default function CompetitorCard({
         </Typography>
 
         <Alert severity="info" sx={{ my: 2 }}>
-          Avalie de 0 a 10 em cada critério. Após confirmado, o voto não pode ser
-          alterado.
+          {voted
+            ? podeAlterar
+              ? 'Seu voto está salvo. Você pode corrigir as notas até finalizar o dia.'
+              : 'Seu voto está salvo. As notas deste dia já foram finalizadas — só o organizador pode liberar uma correção.'
+            : 'Avalie de 0 a 10 em cada critério. Você pode corrigir suas notas até finalizar o dia.'}
         </Alert>
 
         {CRITERIOS.map((criterio) => (
@@ -189,7 +234,7 @@ export default function CompetitorCard({
               step={1}
               marks
               valueLabelDisplay="auto"
-              disabled={voted || loading}
+              disabled={slidersTravados}
               sx={{
                 color: ACENTO,
                 '& .MuiSlider-mark': { backgroundColor: TEXTO_SECUNDARIO },
@@ -210,11 +255,69 @@ export default function CompetitorCard({
           </Alert>
         )}
 
-        {voted ? (
-          <Alert severity="success">
-            Você já votou neste competidor. Use &quot;Próximo&quot; para seguir.
+        {confirmandoZero && !voted && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Todas as notas estão em <strong>0</strong>. Registrar um voto zerado
+            assim mesmo?
+            <Stack direction="row" spacing={1} sx={{ mt: 1.5, flexWrap: 'wrap' }}>
+              <Button size="small" variant="contained" color="warning" onClick={enviarVoto} disabled={loading}>
+                Sim, registrar 0
+              </Button>
+              <Button size="small" onClick={() => setConfirmandoZero(false)} disabled={loading}>
+                Revisar notas
+              </Button>
+            </Stack>
           </Alert>
-        ) : (
+        )}
+
+        {voted ? (
+          editando ? (
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                size="large"
+                onClick={handleSubmit}
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : null}
+              >
+                {loading ? 'Salvando...' : 'SALVAR ALTERAÇÃO'}
+              </Button>
+              <Button
+                variant="outlined"
+                fullWidth
+                size="large"
+                onClick={cancelarEdicao}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            </Stack>
+          ) : podeAlterar ? (
+            <Stack spacing={1}>
+              <Alert severity="success">
+                Seu voto neste competidor está registrado. Quer mudar alguma nota?
+              </Alert>
+              <Button
+                variant="outlined"
+                color="primary"
+                fullWidth
+                size="large"
+                onClick={() => setEditando(true)}
+              >
+                ALTERAR VOTO
+              </Button>
+              <Typography sx={{ color: TEXTO_SECUNDARIO, fontSize: '0.85rem' }}>
+                Ou use &quot;Próximo&quot; para seguir para o próximo competidor.
+              </Typography>
+            </Stack>
+          ) : (
+            <Alert severity="success">
+              Você já votou neste competidor. Use &quot;Próximo&quot; para seguir.
+            </Alert>
+          )
+        ) : confirmandoZero ? null : (
           <Button
             variant="contained"
             color="primary"
