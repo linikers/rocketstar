@@ -134,7 +134,7 @@ const sortedUsers = rankingSource
         <Grid container spacing={4}>
           {sortedUsers.length > 0 ? (
             sortedUsers.map((user, index) => (
-              <Grid item xs={12} sm={6} md={6} lg={6} xl={4} key={user.id}>
+              <Grid item xs={12} sm={6} md={6} lg={6} xl={4} key={user._id}>
                 <RankingCard user={user} index={index} />
               </Grid>
             ))
