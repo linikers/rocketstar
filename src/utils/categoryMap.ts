@@ -8,11 +8,11 @@ export const categoryToDay: Record<string, "Sexta" | "Sábado" | "Domingo"> = {
     "Old School": "Sábado",
     "Iniciante": "Sábado",
     "Aquarela": "Sábado",
-    "Toriyama": "Sábado",
     "Série de desenho": "Sábado",
     "Anime retrô": "Sábado",
 
     // Domingo
+    "Toriyama": "Domingo",
     "Cicatrizado": "Domingo",
     "Whipshading": "Domingo",
     "Blackwork": "Domingo",
