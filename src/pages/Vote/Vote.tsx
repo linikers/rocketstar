@@ -490,7 +490,8 @@ export default function Vote() {
             </Typography>
             <Typography sx={{ color: "#8AC6D0", mb: 3 }}>
               Escolha o dia para começar. Ao finalizar um dia, você pode voltar
-              por este mesmo link para avaliar o outro.
+              por este mesmo link para avaliar o outro. Enquanto não finalizar,
+              você pode corrigir suas notas quando quiser.
             </Typography>
             <Grid container spacing={2}>
               {diasDisponiveis.map((d) => (
@@ -519,6 +520,11 @@ export default function Vote() {
                           <Typography sx={{ color: "#81C784", fontWeight: 600 }}>
                             Concluído ✓
                           </Typography>
+                          {d.votados >= d.total && (
+                            <Typography sx={{ color: "#8AC6D0", fontSize: "0.8rem" }}>
+                              Notas travadas — correção só pelo organizador.
+                            </Typography>
+                          )}
                           {/* Competidor cadastrado DEPOIS de o jurado finalizar o dia
                               ficaria sem nota se o dia não pudesse ser reaberto. */}
                           <Button
@@ -624,6 +630,10 @@ export default function Vote() {
                     jurorToken={jurorToken}
                     onVoteComplete={handleVoteComplete}
                     onError={showSnackbar}
+                    onSaved={showSnackbar}
+                    // Correção do próprio voto: liberada enquanto o dia não foi
+                    // finalizado (depois disso o servidor também bloqueia).
+                    podeAlterar={!diasFinalizados.includes(diaSelecionado || "")}
                   />
                 </Grid>
               </Grid>
@@ -727,8 +737,9 @@ export default function Vote() {
           </DialogTitle>
           <DialogContent>
             <Typography sx={{ color: "#8AC6D0" }}>
-              Você votou nos {totalCount} competidores de {diaSelecionado}. Os
-              votos não podem ser alterados depois de finalizar.
+              Você votou nos {totalCount} competidores de {diaSelecionado}. Depois
+              de finalizar, suas notas ficam travadas — só o organizador consegue
+              liberar uma correção.
             </Typography>
             {outrosDias.length > 0 && (
               <Typography sx={{ color: "#8AC6D0", mt: 2 }}>

@@ -6,6 +6,7 @@ import QRCodeAuth from "@/models/QRCodeAuth";
 import Votacao from "@/models/Votacao";
 import { isCodeFormatValido, verificarTokenJurado } from "@/lib/auth";
 import { rateLimit } from "@/lib/rateLimit";
+import { diaDaCategoria } from "@/utils/categoryMap";
 
 const NOTAS = [
   "anatomy",
@@ -125,6 +126,24 @@ export default async function handlerVote(
       });
     }
 
+    // Correção do próprio voto (sem zerar nada): o jurado pode REENVIAR as notas
+    // do mesmo competidor enquanto não finalizou aquele dia. Depois de finalizar
+    // o dia, as notas ficam travadas — aí só o organizador libera (reset no
+    // painel de Jurados). Sem esta trava, um dia já encerrado poderia ser
+    // reescrito pelo mesmo link.
+    const diaCompetidor = diaDaCategoria(competidor.category);
+    const jaVotouNesteCompetidor = (competidor.votos || []).some(
+      (voto: IVoto) => voto.code === code
+    );
+    if (
+      jaVotouNesteCompetidor &&
+      (qrCode.diasFinalizados || []).includes(diaCompetidor)
+    ) {
+      return response.status(409).json({
+        error: `As notas de ${diaCompetidor} já foram finalizadas. Peça ao organizador para liberar a correção.`,
+      });
+    }
+
     const novoVoto: IVoto = {
       code,
       jurorName: qrCode.jurorName,
@@ -136,17 +155,28 @@ export default async function handlerVote(
       visualImpact: notas.visualImpact,
     };
 
-    // Adiciona voto e recalcula totais
-    // Atualização atômica: a checagem de "jurado já votou" entra no filtro do
-    // update. Duas requisições simultâneas do mesmo jurado/competidor não
-    // conseguem duplicar o voto (apenas uma passa no filtro).
+    // Grava o voto e recalcula os totais numa única operação atômica: o voto
+    // anterior DESTE jurado é removido pelo $filter antes do $concatArrays, o
+    // que permite corrigir a nota sem duplicar voto (antes o filtro bloqueava
+    // qualquer reenvio e o jurado dependia do admin para zerar tudo).
     const updatedCompetidor = await Competidor.findOneAndUpdate(
-      { _id: competidorId, 'votos.code': { $ne: code } },
+      { _id: competidorId },
       [
         {
           $set: {
-            votos: { $concatArrays: ["$votos", [novoVoto]] }
-          }
+            votos: {
+              $concatArrays: [
+                {
+                  $filter: {
+                    input: { $ifNull: ["$votos", []] },
+                    as: "voto",
+                    cond: { $ne: ["$$voto.code", code] },
+                  },
+                },
+                [novoVoto],
+              ],
+            },
+          },
         },
         {
           $set: {
@@ -173,12 +203,7 @@ export default async function handlerVote(
     )
 
     if (!updatedCompetidor) {
-      // Se o competidor existe mas o filtro não casou, é porque este jurado já votou
-      const existe = await Competidor.exists({ _id: competidorId });
-      if (!existe) {
-        return response.status(404).json({ error: 'Competidor não encontrado.' });
-      }
-      return response.status(409).json({ error: 'Você já votou neste competidor.' });
+      return response.status(404).json({ error: 'Competidor não encontrado.' });
     }
 
     // Vincula o QR Code ao evento no primeiro voto (compatibilidade com os QR
@@ -192,9 +217,13 @@ export default async function handlerVote(
 
     // Não devolve o documento do competidor: ele carrega os votos de TODOS os
     // jurados (notas e nomes), que o jurado não deve ver antes de finalizar.
+    // `atualizado` distingue correção de voto novo (a tela avisa o jurado).
     return response.status(200).json({
       success: true,
-      message: 'Voto registrado com sucesso.',
+      atualizado: jaVotouNesteCompetidor,
+      message: jaVotouNesteCompetidor
+        ? 'Voto atualizado com sucesso.'
+        : 'Voto registrado com sucesso.',
       competidorId,
     });
   } catch (error) {

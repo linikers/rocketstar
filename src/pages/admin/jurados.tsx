@@ -27,6 +27,7 @@ import {
   ArrowBack as BackIcon,
   RocketLaunch,
   Logout as LogoutIcon,
+  LockOpen as LockOpenIcon,
 } from "@mui/icons-material";
 import { useSnackbar } from "@/contexts/SnackbarContext";
 import { apiFetch } from "@/lib/apiClient";
@@ -56,6 +57,11 @@ export default function AdminJurados() {
     name?: string;
   }>({ open: false });
   const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    code?: string;
+    name?: string;
+  }>({ open: false });
+  const [liberarDialog, setLiberarDialog] = useState<{
     open: boolean;
     code?: string;
     name?: string;
@@ -114,6 +120,33 @@ export default function AdminJurados() {
       setResetDialog({ open: false });
     } catch (error) {
       showSnackbar("Erro ao zerar votos", "error");
+    }
+  };
+
+  const handleLiberarCorrecao = async () => {
+    if (!liberarDialog.code) return;
+    try {
+      // Reabre os dias finalizados do jurado e reativa o link. NÃO apaga voto:
+      // é o caminho "corrigir sem zerar" (o reset continua existindo, mas só
+      // quando a intenção é mesmo apagar as notas).
+      const res = await apiFetch("/api/qrcodes/liberar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: liberarDialog.code }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Erro ao liberar correção");
+      setLiberarDialog({ open: false });
+      showSnackbar(
+        `Correção liberada para "${liberarDialog.name}" — ${data?.data?.votosMantidos ?? 0} voto(s) mantido(s)`,
+        "success"
+      );
+      fetchQRCodes();
+    } catch (error) {
+      showSnackbar(
+        error instanceof Error ? error.message : "Erro ao liberar correção",
+        "error"
+      );
     }
   };
 
@@ -344,6 +377,35 @@ export default function AdminJurados() {
                         />
                       </TableCell>
                       <TableCell>
+                        {((qr.diasFinalizados?.length ?? 0) > 0 ||
+                          qr.isFinished ||
+                          qr.isUsed) && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<LockOpenIcon />}
+                            onClick={() =>
+                              setLiberarDialog({
+                                open: true,
+                                code: qr.code,
+                                name: qr.jurorName,
+                              })
+                            }
+                            sx={{
+                              borderColor: "rgba(129, 199, 132, 0.4)",
+                              color: "#81C784",
+                              fontSize: "0.75rem",
+                              mr: 1,
+                              mb: 0.5,
+                              "&:hover": {
+                                borderColor: "#81C784",
+                                background: "rgba(129, 199, 132, 0.1)",
+                              },
+                            }}
+                          >
+                            Liberar correção
+                          </Button>
+                        )}
                         {qr.status === "valido" && (
                           <Button
                             size="small"
@@ -426,7 +488,11 @@ export default function AdminJurados() {
               votação. Deseja zerar todos os votos para permitir um novo teste?
             </Typography>
             <Typography sx={{ color: "#f44336", fontSize: "0.85rem" }}>
-              Isso irá resetar TODOS os competidores (votos e notas).
+              Isso apaga as notas deste jurado em TODOS os competidores.
+            </Typography>
+            <Typography sx={{ color: "#81C784", fontSize: "0.85rem", mt: 1 }}>
+              Para deixar o jurado corrigir as PRÓPRIAS notas sem apagar nada,
+              use &quot;Liberar correção&quot;.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 2, gap: 1 }}>
@@ -442,6 +508,48 @@ export default function AdminJurados() {
               onClick={handleResetVotos}
             >
               Sim, resetar
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog de confirmacao: liberar correcao sem zerar votos */}
+        <Dialog
+          open={liberarDialog.open}
+          onClose={() => setLiberarDialog({ open: false })}
+          PaperProps={{
+            sx: {
+              background: "#2D1B36",
+              border: "1px solid rgba(129, 199, 132, 0.3)",
+              borderRadius: 3,
+              maxWidth: 450,
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: "#B8F3FF", fontWeight: 600 }}>
+            Liberar correção?
+          </DialogTitle>
+          <DialogContent>
+            <Typography sx={{ color: "#8AC6D0", mb: 1 }}>
+              O jurado <strong>{liberarDialog.name}</strong> volta a poder
+              corrigir as notas e finalizar o dia de novo, pelo mesmo link.
+            </Typography>
+            <Typography sx={{ color: "#81C784", fontSize: "0.85rem" }}>
+              Os votos NÃO são apagados — diferente de &quot;Resetar votos&quot;.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              onClick={() => setLiberarDialog({ open: false })}
+              sx={{ color: "#8AC6D0" }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleLiberarCorrecao}
+              sx={{ background: "#81C784", color: "#1a1020", "&:hover": { background: "#66bb6a" } }}
+            >
+              Sim, liberar
             </Button>
           </DialogActions>
         </Dialog>
